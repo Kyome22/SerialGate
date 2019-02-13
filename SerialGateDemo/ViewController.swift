@@ -47,11 +47,7 @@ class ViewController: NSViewController, SGPortManagerDelegate, SGPortDelegate {
     @IBAction func pushButton(_ sender: NSButton) {
         if sender.tag == 0 { // open
             port?.delegate = self
-            // ★★ setting properties ★★ //
-            // port?.baudRate = B115200
-            // port?.parity = SGParity.even
-            // port?.rts = true
-            // port?.dtr = true
+            port?.baudRate = B9600
             port?.open()
             portsPopUp.isEnabled = false
             textView.string = ""
