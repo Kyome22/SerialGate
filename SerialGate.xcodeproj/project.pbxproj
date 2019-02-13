@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1C6775F3221372D800D34F56 /* SerialGate.h in Headers */ = {isa = PBXBuildFile; fileRef = 1C6775F1221372D800D34F56 /* SerialGate.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		1C6775FB2213EBAB00D34F56 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C6775FA2213EBAA00D34F56 /* IOKit.framework */; };
 		1C6775FD2213EC5E00D34F56 /* SGUSBDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C6775FC2213EC5E00D34F56 /* SGUSBDetector.swift */; };
 		1C6775FF2213EC9400D34F56 /* SGPortManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C6775FE2213EC9400D34F56 /* SGPortManager.swift */; };
 		1C6776012213ECA000D34F56 /* SGPort.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C6776002213ECA000D34F56 /* SGPort.swift */; };
@@ -21,7 +19,6 @@
 
 /* Begin PBXFileReference section */
 		1C6775EE221372D800D34F56 /* SerialGate.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SerialGate.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		1C6775F1221372D800D34F56 /* SerialGate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SerialGate.h; sourceTree = "<group>"; };
 		1C6775F2221372D800D34F56 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1C6775FA2213EBAA00D34F56 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		1C6775FC2213EC5E00D34F56 /* SGUSBDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SGUSBDetector.swift; sourceTree = "<group>"; };
@@ -41,7 +38,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1C6775FB2213EBAB00D34F56 /* IOKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,7 +74,6 @@
 		1C6775F0221372D800D34F56 /* SerialGate */ = {
 			isa = PBXGroup;
 			children = (
-				1C6775F1221372D800D34F56 /* SerialGate.h */,
 				1C6775FC2213EC5E00D34F56 /* SGUSBDetector.swift */,
 				1C6775FE2213EC9400D34F56 /* SGPortManager.swift */,
 				1C6776002213ECA000D34F56 /* SGPort.swift */,
@@ -115,7 +110,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1C6775F3221372D800D34F56 /* SerialGate.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

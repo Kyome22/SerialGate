@@ -6,7 +6,7 @@
 //  Copyright © 2019 Takuto Nakamura. All rights reserved.
 //
 
-import Foundation
+import AppKit
 import IOKit
 import IOKit.serial
 
