@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |spec|
   spec.name         = "SerialGate"
-  spec.version      = "1.2"
+  spec.version      = "1.3"
   spec.summary      = "Serial Communication Library for macOS written by Swift."
   spec.description  = <<-DESC
     By using SerialGate, serial communication with Arduino and mbed can be implemented easily.
