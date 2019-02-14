@@ -1,9 +1,8 @@
 // Example code for SerialGate.
 // This plogram tested on Arduino micro.
 
-int value1 = 0;
-int value2 = 0;
-int value3 = 0;
+int value = 0;
+int flag = 0;
 int led = 13;
 
 void setup() {
@@ -15,20 +14,18 @@ void setup() {
 void loop() {
   if (Serial.available() > 0) {
     byte v = Serial.read();
-    if (v == 0x31) {
+    if (v == 0x31) { // "1"
+      flag = 1;
       digitalWrite(led, HIGH);
-      value3 = 1;
     } else {
-      value3 = 0;
+      flag = 0;
       digitalWrite(led, LOW);
     }
   }
-  value1 = random(20);
-  value2 = random(20);
-  Serial.print(value1);
-  Serial.print(",");
-  Serial.print(value2);
-  Serial.print(",");
-  Serial.println(value3);
-  delay(200);
+  value = random(10);
+  char buf[20] = "";
+  sprintf(buf, "Hello World\n%d,%d\n", value, flag);
+  Serial.print(buf);
+  Serial.flush();
+  delay(50);
 }
