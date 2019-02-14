@@ -56,8 +56,10 @@ port.send(text)
 
 - Read
 
+⚠️ SerialGate waits until gets a new line code ("\n" or "\r\n") and does not return values.
+
 ```swift
-func received(_ text: String) { }   // SGPortDelegate is required
+func received(_ texts: [String]) { }   // SGPortDelegate is required
 ```
 
 - Get notification of updated of availablePorts.

@@ -16,7 +16,7 @@ public enum SGPortState: Int {
 }
 
 public protocol SGPortDelegate: AnyObject {
-    func received(_ text: String)
+    func received(_ texts: [String])
     func portWasOpened(_ port: SGPort)
     func portWasClosed(_ port: SGPort)
     func portWasRemoved(_ port: SGPort)
@@ -137,7 +137,6 @@ public class SGPort {
             var bytes: [UInt32] = text.unicodeScalars.map { (uni) -> UInt32 in
                 return uni.value
             }
-            Swift.print(bytes.count)
             Darwin.write(fileDescriptor, &bytes, bytes.count)
         }
     }
@@ -174,12 +173,14 @@ public class SGPort {
         while case let readLength = Darwin.read(localFileDescriptor, &buffer, 1024), readLength > 0 {
             let readData = NSData(bytes: buffer, length: readLength) as Data
             text += String(data: readData, encoding: String.Encoding.ascii) ?? ""
-            if text.contains("\r\n") || text.contains("\n") {
-                text = text.trimmingCharacters(in: CharacterSet.newlines)
+            if text.hasSuffix("\r\n") || text.hasSuffix("\n") {
                 break
             }
         }
-        delegate?.received(text)
+        text = text.replacingOccurrences(of: "\r\n", with: "\n")
+        text = text.trimmingCharacters(in: CharacterSet.newlines)
+        let texts = text.components(separatedBy: "\n")
+        delegate?.received(texts)
     }
     
 }

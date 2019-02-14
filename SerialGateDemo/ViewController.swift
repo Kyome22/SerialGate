@@ -81,9 +81,9 @@ class ViewController: NSViewController, SGPortManagerDelegate, SGPortDelegate {
     }
     
     // ★★ SGPortDelegate ★★ //
-    func received(_ text: String) {
+    func received(_ texts: [String]) {
         DispatchQueue.main.async {
-            self.textView.string += text + "\n"
+            self.textView.string += texts.joined(separator: "\n") + "\n"
             self.textView.scrollToEndOfDocument(nil)
         }
     }

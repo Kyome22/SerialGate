@@ -97,9 +97,6 @@ public class SGPortManager {
                 availablePorts.insert(SGPort(portName), at: 0)
             }
         }
-        availablePorts.forEach { (port) in
-            Swift.print(port.name)
-        }
         delegate?.updatedAvailablePorts()
     }
     
