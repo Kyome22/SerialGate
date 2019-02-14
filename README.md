@@ -20,7 +20,7 @@ pod 'SerialGate'
 
 
 ## Demo
-### Serial Communication Demo App for Arduino or mbed is in this Project.
+Serial Communication Demo App for Arduino or mbed is in this Project.
 ![entitlements](https://github.com/Kyome22/SerialGate/blob/master/images/DemoApp.png)
 
 
@@ -54,7 +54,7 @@ let text: String = "Hello World"
 port.send(text)
 ```
 
-- Read
+- Read messages
 
 ⚠️ SerialGate waits until gets a new line code ("\n" or "\r\n") and does not return values.
 
