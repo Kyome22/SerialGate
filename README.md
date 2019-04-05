@@ -1,5 +1,5 @@
 # SerialGate
-Serial Communication Library for macOS written by Swift.
+Serial Communication Library for macOS written in Swift.
 
 ## Installation
 
