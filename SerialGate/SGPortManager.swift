@@ -14,7 +14,7 @@ public protocol SGPortManagerDelegate: AnyObject {
     func updatedAvailablePorts()
 }
 
-public class SGPortManager {
+public final class SGPortManager {
     
     public static let shared = SGPortManager()
     public private(set) var availablePorts = [SGPort]()

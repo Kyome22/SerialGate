@@ -15,7 +15,7 @@ protocol SGUSBDetectorDelegate: AnyObject {
     func deviceRemoved(_ device: io_object_t)
 }
 
-class SGUSBDetector {
+final class SGUSBDetector {
     
     weak var delegate: SGUSBDetectorDelegate?
     private let notificationPort = IONotificationPortCreate(kIOMasterPortDefault)

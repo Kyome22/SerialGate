@@ -22,7 +22,7 @@ public protocol SGPortDelegate: AnyObject {
     func portWasRemoved(_ port: SGPort)
 }
 
-public class SGPort {
+public final class SGPort {
     
     private var fileDescriptor: Int32 = 0
     private var originalPortOptions = termios()
@@ -46,7 +46,6 @@ public class SGPort {
     deinit {
         close()
     }
-    
     
     // ★★★ Public Function ★★★ //
     public func open() {
@@ -84,8 +83,7 @@ public class SGPort {
             }
         }
         
-        fileDescriptor = Darwin.open(name.cString(using: String.Encoding.ascii)!,
-                                     O_RDWR | O_NOCTTY | O_NONBLOCK)
+        fileDescriptor = Darwin.open(name.cString(using: String.Encoding.ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
         if fileDescriptor == -1 { return exitWithError(1) }
         
         // ★★★ Set Options ★★★ //

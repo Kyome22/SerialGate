@@ -9,7 +9,7 @@
 import Cocoa
 import SerialGate
 
-class ViewController: NSViewController, SGPortManagerDelegate, SGPortDelegate {
+class ViewController: NSViewController {
 
     @IBOutlet weak var portsPopUp: NSPopUpButton!
     @IBOutlet weak var textField: NSTextField!
@@ -62,7 +62,11 @@ class ViewController: NSViewController, SGPortManagerDelegate, SGPortDelegate {
         }
     }
     
-    // ★★ SGPortManagerDelegate ★★ //
+}
+
+// ★★ SGPortManagerDelegate ★★ //
+extension ViewController: SGPortManagerDelegate {
+
     func updatedAvailablePorts() {
         portList = manager.availablePorts
         portsPopUp.removeAllItems()
@@ -80,7 +84,11 @@ class ViewController: NSViewController, SGPortManagerDelegate, SGPortDelegate {
         }
     }
     
-    // ★★ SGPortDelegate ★★ //
+}
+
+// ★★ SGPortDelegate ★★ //
+extension ViewController: SGPortDelegate {
+    
     func received(_ texts: [String]) {
         DispatchQueue.main.async {
             self.textView.string += texts.joined(separator: "\n") + "\n"
@@ -101,4 +109,3 @@ class ViewController: NSViewController, SGPortManagerDelegate, SGPortDelegate {
     }
     
 }
-
