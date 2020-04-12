@@ -6,22 +6,22 @@
 //  Copyright © 2019 Takuto Nakamura. All rights reserved.
 //
 
-import Foundation
-import IOKit
 import IOKit.usb
-
-protocol SGUSBDetectorDelegate: AnyObject {
-    func deviceAdded(_ device: io_object_t)
-    func deviceRemoved(_ device: io_object_t)
-}
 
 final class SGUSBDetector {
     
-    weak var delegate: SGUSBDetectorDelegate?
     private let notificationPort = IONotificationPortCreate(kIOMasterPortDefault)
     private var addedIterator: io_iterator_t = 0
     private var removedIterator: io_iterator_t = 0
-
+    var addedDeviceHandler: (() -> Void)?
+    var removedDeviceHandler: (() -> Void)?
+    
+    deinit {
+        IOObjectRelease(addedIterator)
+        IOObjectRelease(removedIterator)
+        IONotificationPortDestroy(notificationPort)
+    }
+    
     func start() {
         let matchingDict = IOServiceMatching(kIOUSBDeviceClassName)
         let opaqueSelf = Unmanaged.passUnretained(self).toOpaque()
@@ -29,10 +29,10 @@ final class SGUSBDetector {
         let runLoop = IONotificationPortGetRunLoopSource(notificationPort)!.takeRetainedValue()
         CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoop, CFRunLoopMode.defaultMode)
         
-        // ★★★ Added Notification ★★★ //
+        // MARK: ★★★ Added Notification ★★★ //
         let addedCallback: IOServiceMatchingCallback = { (pointer, iterator) in
             let detector = Unmanaged<SGUSBDetector>.fromOpaque(pointer!).takeUnretainedValue()
-            detector.delegate?.deviceAdded(iterator)
+            detector.addedDeviceHandler?()
             while case let device = IOIteratorNext(iterator), device != IO_OBJECT_NULL {
                 IOObjectRelease(device)
             }
@@ -47,10 +47,10 @@ final class SGUSBDetector {
             IOObjectRelease(device)
         }
         
-        // ★★★ Removed Notification ★★★ //
+        // MARK: ★★★ Removed Notification ★★★ //
         let removedCallback: IOServiceMatchingCallback = { (pointer, iterator) in
             let watcher = Unmanaged<SGUSBDetector>.fromOpaque(pointer!).takeUnretainedValue()
-            watcher.delegate?.deviceRemoved(iterator)
+            watcher.removedDeviceHandler?()
             while case let device = IOIteratorNext(iterator), device != IO_OBJECT_NULL {
                 IOObjectRelease(device)
             }
@@ -64,12 +64,6 @@ final class SGUSBDetector {
         while case let device = IOIteratorNext(removedIterator), device != IO_OBJECT_NULL {
             IOObjectRelease(device)
         }
-    }
-    
-    deinit {
-        IOObjectRelease(addedIterator)
-        IOObjectRelease(removedIterator)
-        IONotificationPortDestroy(notificationPort)
     }
     
 }

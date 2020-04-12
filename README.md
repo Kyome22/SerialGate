@@ -36,7 +36,6 @@ let serialPorts = manager.availablePorts
 - Open a serial port
 
 ```swift
-port.delegate = self      // SGPortDelegate is required
 port.baudRate = B9600
 port.open()
 ```
@@ -56,14 +55,33 @@ port.send(text)
 
 - Read messages
 
-⚠️ SerialGate waits until gets a new line code ("\n" or "\r\n") and does not return values.
+```swift
+port.receivedHandler = { (text) in
+    Swift.print(text)
+}
+```
+
+- Notifications about Port
 
 ```swift
-func received(_ texts: [String]) { }   // SGPortDelegate is required
+port.portOpenedHandler = { (port) in
+    Swift.print("Port: \(port.name) Opend")
+}
+port.portClosedHandler = { (port) in
+    Swift.print("Port: \(port.name) Closed")
+}
+port.portClosedHandler = { (port) in
+    Swift.print("Port: \(port.name) Removed")
+}
+port.failureOpenHandler = { (port) in
+    Swift.print("Failure Open Port \(port.name)")
+}
 ```
 
 - Get notification of updated of availablePorts.
 
 ```swift
-func updatedAvailablePorts() { }    // SGPortManagerDelegate is required
+port.updatedAvailablePortsHandler = {
+    // something to do
+}
 ```

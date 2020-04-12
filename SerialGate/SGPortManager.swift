@@ -10,75 +10,83 @@ import AppKit
 import IOKit
 import IOKit.serial
 
-public protocol SGPortManagerDelegate: AnyObject {
-    func updatedAvailablePorts()
-}
-
 public final class SGPortManager {
     
     public static let shared = SGPortManager()
+    
     public private(set) var availablePorts = [SGPort]()
+    public var updatedAvailablePortsHandler: (() -> Void)?
+
     private let detector = SGUSBDetector()
+    private var sleepObserver: NSObjectProtocol?
+    private var wakeObserver: NSObjectProtocol?
     private var terminateObserver: NSObjectProtocol?
-    public weak var delegate: SGPortManagerDelegate?
     
     private init() {
-        detector.delegate = self
         registerNotifications()
         setAvailablePorts()
     }
     
     deinit {
-        NSWorkspace.shared.notificationCenter.removeObserver(self)
-        
+        let wsnc = NSWorkspace.shared.notificationCenter
+        if let sleepObserver = sleepObserver {
+            wsnc.removeObserver(sleepObserver)
+        }
+        if let wakeObserver = wakeObserver {
+            wsnc.removeObserver(wakeObserver)
+        }
         let nc = NotificationCenter.default
         if terminateObserver != nil {
             nc.removeObserver(terminateObserver!)
         }
-        nc.removeObserver(self)
     }
     
-    // ★★★ Notifications ★★★ //
+    // MARK: ★★★ Notifications ★★★
     private func registerNotifications() {
-        // ★★★ USB Detector ★★★ //
-        detector.delegate = self
+        
+        // MARK: ★★★ USB Detector ★★★
+        detector.addedDeviceHandler = {
+            // It is necessary to wait for a while to be updated.
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 1.0) {
+                self.addedPorts()
+            }
+        }
+        detector.removedDeviceHandler = { [weak self] in
+            self?.removedPorts()
+        }
         detector.start()
         
-        // ★★★ Sleep/Wake ★★★ //
+        // MARK: ★★★ Sleep/Wake ★★★
         let wsnc = NSWorkspace.shared.notificationCenter
-        wsnc.addObserver(self, selector: #selector(self.systemWillSleep),
-                         name: NSWorkspace.willSleepNotification, object: nil)
-        wsnc.addObserver(self, selector: #selector(self.systemDidWake),
-                         name: NSWorkspace.didWakeNotification, object: nil)
+        sleepObserver = wsnc.addObserver(forName: NSWorkspace.willSleepNotification,
+                                         object: nil, queue: nil) { [weak self] (n) in
+            self?.availablePorts.forEach { (port) in
+                if port.state == .open {
+                    port.fallSleep()
+                }
+            }
+        }
+        wakeObserver = wsnc.addObserver(forName: NSWorkspace.didWakeNotification,
+                                        object: nil, queue: nil) { [weak self] (n) in
+            self?.availablePorts.forEach { (port) in
+                if port.state == .sleeping {
+                    port.wakeUp()
+                }
+            }
+        }
         
-        // ★★★ Terminate ★★★ //
+        // MARK: ★★★ Terminate ★★★
         let nc = NotificationCenter.default
-        let name = NSApplication.willTerminateNotification
-        terminateObserver = nc.addObserver(forName: name, object: nil, queue: nil) { (notification) in
-            self.availablePorts.forEach({ (port) in
+        terminateObserver = nc.addObserver(forName: NSApplication.willTerminateNotification,
+                                           object: nil, queue: nil) { [weak self] (n) in
+            self?.availablePorts.forEach({ (port) in
                 port.close()
             })
-            self.availablePorts.removeAll()
+            self?.availablePorts.removeAll()
         }
     }
     
-    @objc func systemWillSleep() {
-        availablePorts.forEach { (port) in
-            if port.state == .open {
-                port.fallSleep()
-            }
-        }
-    }
-    
-    @objc func systemDidWake() {
-        availablePorts.forEach { (port) in
-            if port.state == .sleeping {
-                port.wakeUp()
-            }
-        }
-    }
-    
-    // ★★★ Serial Ports ★★★ //
+    // MARK: ★★★ Serial Ports ★★★
     private func setAvailablePorts() {
         let device = findDevice()
         let portList = getPortList(device)
@@ -97,7 +105,7 @@ public final class SGPortManager {
                 availablePorts.insert(SGPort(portName), at: 0)
             }
         }
-        delegate?.updatedAvailablePorts()
+        updatedAvailablePortsHandler?()
     }
     
     private func removedPorts() {
@@ -112,7 +120,7 @@ public final class SGPortManager {
                 return port.name != availablePort.name
             })
         }
-        delegate?.updatedAvailablePorts()
+        updatedAvailablePortsHandler?()
     }
     
     private func findDevice() -> io_iterator_t {
@@ -123,11 +131,9 @@ public final class SGPortManager {
         let typeKey = Unmanaged.passRetained(typeKey_cf).autorelease().toOpaque()
         let allTypes = Unmanaged.passRetained(allTypes_cf).autorelease().toOpaque()
         CFDictionarySetValue(matchingDict, typeKey, allTypes)
-        let result = IOServiceGetMatchingServices(kIOMasterPortDefault,
-                                                  matchingDict,
-                                                  &portIterator)
+        let result = IOServiceGetMatchingServices(kIOMasterPortDefault, matchingDict, &portIterator)
         if result != KERN_SUCCESS {
-            Swift.print("Error: IOServiceGetMatchingServices")
+            logput("Error: IOServiceGetMatchingServices")
             return 0
         }
         return portIterator
@@ -143,21 +149,6 @@ public final class SGPortManager {
         }
         IOObjectRelease(iterator)
         return ports.reversed()
-    }
-    
-}
-
-extension SGPortManager: SGUSBDetectorDelegate {
-    
-    func deviceAdded(_ device: io_object_t) {
-        // It is necessary to wait for a while to be updated.
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 1.0) {
-            self.addedPorts()
-        }
-    }
-    
-    func deviceRemoved(_ device: io_object_t) {
-        removedPorts()
     }
     
 }

@@ -15,11 +15,10 @@ public enum SGPortState: Int {
     case removed
 }
 
-public protocol SGPortDelegate: AnyObject {
-    func received(_ texts: [String])
-    func portWasOpened(_ port: SGPort)
-    func portWasClosed(_ port: SGPort)
-    func portWasRemoved(_ port: SGPort)
+public enum SGParity: Int {
+    case none
+    case even
+    case odd
 }
 
 public final class SGPort {
@@ -28,16 +27,26 @@ public final class SGPort {
     private var originalPortOptions = termios()
     private var readTimer: DispatchSourceTimer?
     
-    public weak var delegate: SGPortDelegate?
     public private(set) var name: String = ""
     public private(set) var state: SGPortState = .close
     
     // You can change these properties while closed.
-    private var innerBaudRate: Int32 = B9600
-    public var baudRate: Int32 {
-        get { return innerBaudRate }
-        set { if state == .close { innerBaudRate = newValue } }
+    public var baudRate: Int32 = B9600 {
+        didSet { setOptions() }
     }
+    public var parity: SGParity = .none {
+        didSet { setOptions() }
+    }
+    public var stopBits: UInt32 = 1 {
+        didSet { setOptions() }
+    }
+    
+    //
+    public var receivedHandler: ((_ texts: String) -> Void)?
+    public var failureOpenHandler: ((_ port: SGPort) -> Void)?
+    public var portOpenedHandler: ((_ port: SGPort) -> Void)?
+    public var portClosedHandler: ((_ port: SGPort) -> Void)?
+    public var portRemovedHandler: ((_ port: SGPort) -> Void)?
     
     init(_ portName: String) {
         name = portName
@@ -47,116 +56,129 @@ public final class SGPort {
         close()
     }
     
+    private func exitWithError(_ n: Int) {
+        logput("Error \(n)")
+        failureOpenHandler?(self)
+    }
+    
     // ★★★ Public Function ★★★ //
     public func open() {
-        var fileDescriptor: Int32 = -1
-        var options = termios()
+        var fd: Int32 = -1
         
-        func exitWithError(_ n: Int) {
-            Swift.print("Error \(n)")
-            Darwin.close(fileDescriptor)
-        }
-        
-        func updateC_CC(_ n: Int32, v: UInt8) {
-            switch n {
-            case  0: options.c_cc.0  = v
-            case  1: options.c_cc.1  = v
-            case  2: options.c_cc.2  = v
-            case  3: options.c_cc.3  = v
-            case  4: options.c_cc.4  = v
-            case  5: options.c_cc.5  = v
-            case  6: options.c_cc.6  = v
-            case  7: options.c_cc.7  = v
-            case  8: options.c_cc.8  = v
-            case  9: options.c_cc.9  = v
-            case 10: options.c_cc.10 = v
-            case 11: options.c_cc.11 = v
-            case 12: options.c_cc.12 = v
-            case 13: options.c_cc.13 = v
-            case 14: options.c_cc.14 = v
-            case 15: options.c_cc.15 = v
-            case 16: options.c_cc.16 = v
-            case 17: options.c_cc.17 = v
-            case 18: options.c_cc.18 = v
-            case 19: options.c_cc.19 = v
-            default: break
-            }
-        }
-        
-        fileDescriptor = Darwin.open(name.cString(using: String.Encoding.ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
-        if fileDescriptor == -1 { return exitWithError(1) }
-        
-        // ★★★ Set Options ★★★ //
-        if ioctl(fileDescriptor, TIOCEXCL) == -1 { return exitWithError(2) }
-        if fcntl(fileDescriptor, F_SETFL, 0) == -1 { return exitWithError(3) }
-        if tcgetattr(fileDescriptor, &originalPortOptions) == -1 { return exitWithError(4) }
-        options = originalPortOptions
-        cfmakeraw(&options)
-        updateC_CC(VMIN, v: 1)
-        updateC_CC(VTIME, v: 3)
-        cfsetspeed(&options, speed_t(baudRate))
-        
-        options.c_cflag |= UInt(CLOCAL | CREAD)
-        options.c_cflag &= ~UInt(CSIZE)
-        options.c_cflag |= UInt(CS8)
-        options.c_lflag &= ~UInt(ICANON | ECHO | ECHOE | ISIG)
-        
-        if tcsetattr(fileDescriptor, TCSANOW, &options) == -1 { return exitWithError(5) }
+        fd = Darwin.open(name.cString(using: String.Encoding.ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
+        if fd == -1 { return exitWithError(1) }
+        if fcntl(fd, F_SETFL, 0) == -1 { return exitWithError(2) }
         
         // ★★★ Start Communication ★★★ //
-        self.fileDescriptor = fileDescriptor
+        fileDescriptor = fd
+        setOptions()
         readTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         readTimer?.schedule(deadline: DispatchTime.now(),
                             repeating: DispatchTimeInterval.nanoseconds(Int(10 * NSEC_PER_MSEC)),
                             leeway: DispatchTimeInterval.nanoseconds(Int(5 * NSEC_PER_MSEC)))
-        readTimer?.setEventHandler(handler: {
-            self.read()
+        readTimer?.setEventHandler(handler: { [weak self] in
+            self?.read()
         })
-        readTimer?.setCancelHandler(handler: {
-            self.close()
+        readTimer?.setCancelHandler(handler: { [weak self] in
+            self?.close()
         })
         readTimer?.resume()
         state = SGPortState.open
-        delegate?.portWasOpened(self)
+        portOpenedHandler?(self)
     }
     
     public func close() {
         readTimer?.cancel()
         readTimer = nil
         if tcdrain(fileDescriptor) == -1 { return }
-        if tcsetattr(fileDescriptor, TCSADRAIN, &originalPortOptions) == -1 { return }
+        var options = termios()
+        if tcsetattr(fileDescriptor, TCSADRAIN, &options) == -1 { return }
         Darwin.close(fileDescriptor)
         state = SGPortState.close
-        delegate?.portWasClosed(self)
+        fileDescriptor = -1
+        portClosedHandler?(self)
     }
     
     public func send(_ text: String) {
-        if state == .open {
-            var bytes: [UInt32] = text.unicodeScalars.map { (uni) -> UInt32 in
-                return uni.value
-            }
-            Darwin.write(fileDescriptor, &bytes, bytes.count)
+        if state != .open { return }
+        var bytes: [UInt32] = text.unicodeScalars.map { (uni) -> UInt32 in
+            return uni.value
+        }
+        Darwin.write(fileDescriptor, &bytes, bytes.count)
+    }
+    
+    // ★★★ Set Options ★★★ //
+    private func setOptions() {
+        if fileDescriptor < 1 { return }
+        var options = termios()
+        if tcgetattr(fileDescriptor, &options) == -1 {
+            return exitWithError(3)
+        }
+        cfmakeraw(&options)
+        options.updateC_CC(VMIN, v: 1)
+        options.updateC_CC(VTIME, v: 2)
+
+        // DataBits
+        options.c_cflag &= ~UInt(CSIZE)
+        options.c_cflag |= UInt(CS8)
+        
+        // StopBits
+        if 1 < stopBits {
+            options.c_cflag |= UInt(CSTOPB)
+        } else {
+            options.c_cflag &= ~UInt(CSTOPB)
+        }
+        
+        // Parity
+        switch parity {
+        case .none:
+            options.c_cflag &= ~UInt(PARENB)
+        case .even:
+            options.c_cflag |= UInt(PARENB)
+            options.c_cflag &= ~UInt(PARODD)
+        case .odd:
+            options.c_cflag |= UInt(PARENB)
+            options.c_cflag |= UInt(PARODD)
+        }
+        
+        // EchoReceivedData
+        options.c_cflag &= ~UInt(ECHO)
+        // RTS CTS FlowControl
+        options.c_cflag &= ~UInt(CRTSCTS)
+        // DTR DSR FlowControl
+        options.c_cflag &= ~UInt(CDTR_IFLOW | CDSR_OFLOW)
+        // DCD OutputFlowControl
+        options.c_cflag &= ~UInt(CCAR_OFLOW)
+        
+        options.c_cflag |= UInt(HUPCL)
+        options.c_cflag |= UInt(CLOCAL)
+        options.c_cflag |= UInt(CREAD)
+        options.c_lflag &= ~UInt(ICANON | ISIG)
+        
+        cfsetspeed(&options, speed_t(baudRate))
+        
+        if tcsetattr(fileDescriptor, TCSANOW, &options) == -1 {
+            return exitWithError(4)
         }
     }
     
-    
     // ★★★ Internal Function ★★★ //
-    internal func removed() {
+    func removed() {
         readTimer?.cancel()
         readTimer = nil
         if tcdrain(fileDescriptor) == -1 { return }
         if tcsetattr(fileDescriptor, TCSADRAIN, &originalPortOptions) == -1 { return }
         Darwin.close(fileDescriptor)
         state = SGPortState.removed
-        delegate?.portWasRemoved(self)
+        portRemovedHandler?(self)
     }
     
-    internal func fallSleep() {
+    func fallSleep() {
         readTimer?.suspend()
         state = SGPortState.sleeping
     }
     
-    internal func wakeUp() {
+    func wakeUp() {
         readTimer?.resume()
         state = SGPortState.open
     }
@@ -164,21 +186,13 @@ public final class SGPort {
     
     // ★★★ Private Function ★★★ //
     private func read() {
-        let localFileDescriptor: Int32 = self.fileDescriptor
-        var text: String = ""
+        if state != .open { return }
         var buffer = [UInt8](repeating: 0, count: 1024)
-        // wait until coming new lines.
-        while case let readLength = Darwin.read(localFileDescriptor, &buffer, 1024), readLength > 0 {
-            let readData = NSData(bytes: buffer, length: readLength) as Data
-            text += String(data: readData, encoding: String.Encoding.ascii) ?? ""
-            if text.hasSuffix("\r\n") || text.hasSuffix("\n") {
-                break
-            }
-        }
-        text = text.replacingOccurrences(of: "\r\n", with: "\n")
-        text = text.trimmingCharacters(in: CharacterSet.newlines)
-        let texts = text.components(separatedBy: "\n")
-        delegate?.received(texts)
+        let readLength = Darwin.read(fileDescriptor, &buffer, 1024)
+        if  readLength < 1 { return }
+        let data = Data(bytes: buffer, count: readLength)
+        let text = String(data: data, encoding: String.Encoding.ascii)!
+        receivedHandler?(text)
     }
     
 }

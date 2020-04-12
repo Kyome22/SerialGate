@@ -15,6 +15,7 @@
 		1C67760F22140DFD00D34F56 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1C67760E22140DFD00D34F56 /* Assets.xcassets */; };
 		1C67761222140DFD00D34F56 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1C67761022140DFD00D34F56 /* Main.storyboard */; };
 		1C6776182214103100D34F56 /* SerialGate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C6775EE221372D800D34F56 /* SerialGate.framework */; };
+		1CA4D856244342D000D360D3 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CA4D855244342D000D360D3 /* Utils.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +32,7 @@
 		1C67761122140DFD00D34F56 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		1C67761322140DFD00D34F56 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1C67761422140DFD00D34F56 /* SerialGateDemo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SerialGateDemo.entitlements; sourceTree = "<group>"; };
+		1CA4D855244342D000D360D3 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +76,7 @@
 		1C6775F0221372D800D34F56 /* SerialGate */ = {
 			isa = PBXGroup;
 			children = (
+				1CA4D855244342D000D360D3 /* Utils.swift */,
 				1C6775FC2213EC5E00D34F56 /* SGUSBDetector.swift */,
 				1C6775FE2213EC9400D34F56 /* SGPortManager.swift */,
 				1C6776002213ECA000D34F56 /* SGPort.swift */,
@@ -222,6 +225,7 @@
 				1C6775FF2213EC9400D34F56 /* SGPortManager.swift in Sources */,
 				1C6775FD2213EC5E00D34F56 /* SGUSBDetector.swift in Sources */,
 				1C6776012213ECA000D34F56 /* SGPort.swift in Sources */,
+				1CA4D856244342D000D360D3 /* Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -304,6 +308,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_SWIFT_FLAGS = "-D DEBUG";
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -361,6 +366,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				OTHER_SWIFT_FLAGS = "-D DEBUG";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -376,7 +382,7 @@
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.5;
+				CURRENT_PROJECT_VERSION = 2.0;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VJ5N2X84K8;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -391,7 +397,7 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kyome.SerialGate;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -407,7 +413,7 @@
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.5;
+				CURRENT_PROJECT_VERSION = 2.0;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VJ5N2X84K8;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -422,7 +428,7 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kyome.SerialGate;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -438,6 +444,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 2.0;
 				DEVELOPMENT_TEAM = VJ5N2X84K8;
 				INFOPLIST_FILE = SerialGateDemo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -445,6 +452,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kyome.SerialGateDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -459,6 +467,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 2.0;
 				DEVELOPMENT_TEAM = VJ5N2X84K8;
 				INFOPLIST_FILE = SerialGateDemo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -466,6 +475,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kyome.SerialGateDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;

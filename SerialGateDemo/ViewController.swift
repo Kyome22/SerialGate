@@ -9,6 +9,7 @@
 import Cocoa
 import SerialGate
 
+// with Test_for_SerialGate Arduino Program
 class ViewController: NSViewController {
 
     @IBOutlet weak var portsPopUp: NSPopUpButton!
@@ -21,9 +22,10 @@ class ViewController: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        manager.delegate = self
+        manager.updatedAvailablePortsHandler = { [weak self] in
+            self?.updatedAvailablePorts()
+        }
         portList = manager.availablePorts
-        
         portsPopUp.removeAllItems()
         portList.forEach { (port) in
             portsPopUp.addItem(withTitle: port.name)
@@ -35,19 +37,28 @@ class ViewController: NSViewController {
         port?.close()
     }
 
-    override var representedObject: Any? {
-        didSet {
-        }
-    }
-
     @IBAction func selectPort(_ sender: NSPopUpButton) {
         port = portList[sender.indexOfSelectedItem]
     }
     
     @IBAction func pushButton(_ sender: NSButton) {
         if sender.tag == 0 { // open
-            port?.delegate = self
             port?.baudRate = B9600
+            port?.portOpenedHandler = { [weak self] (port) in
+                self?.portWasOpened(port)
+            }
+            port?.portClosedHandler = { [weak self] (port) in
+                self?.portWasClosed(port)
+            }
+            port?.portClosedHandler = { [weak self] (port) in
+                self?.portWasClosed(port)
+            }
+            port?.receivedHandler = { [weak self] (text) in
+                self?.received(text)
+            }
+            port?.failureOpenHandler = { (port) in
+                Swift.print("Failure Open Port \(port.name)")
+            }
             port?.open()
             portsPopUp.isEnabled = false
             textView.string = ""
@@ -62,11 +73,7 @@ class ViewController: NSViewController {
         }
     }
     
-}
-
-// ★★ SGPortManagerDelegate ★★ //
-extension ViewController: SGPortManagerDelegate {
-
+    // MARK: ★★ SGPortManager Handler ★★
     func updatedAvailablePorts() {
         portList = manager.availablePorts
         portsPopUp.removeAllItems()
@@ -84,14 +91,10 @@ extension ViewController: SGPortManagerDelegate {
         }
     }
     
-}
-
-// ★★ SGPortDelegate ★★ //
-extension ViewController: SGPortDelegate {
-    
-    func received(_ texts: [String]) {
+    // MARK: ★★ SGPortDelegate ★★
+    func received(_ text: String) {
         DispatchQueue.main.async {
-            self.textView.string += texts.joined(separator: "\n") + "\n"
+            self.textView.string += text
             self.textView.scrollToEndOfDocument(nil)
         }
     }
