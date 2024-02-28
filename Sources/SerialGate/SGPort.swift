@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 public final class SGPort {
@@ -7,53 +8,44 @@ public final class SGPort {
 
     public private(set) var name: String = ""
     public private(set) var state: SGPortState = .close
+    public private(set) var baudRate: Int32 = B9600
+    public private(set) var parity: SGParity = .none
+    public private(set) var stopBits: UInt32 = 1
 
-    // You can change these properties while closed.
-    public var baudRate: Int32 = B9600 {
-        didSet { setOptions() }
-    }
-    public var parity: SGParity = .none {
-        didSet { setOptions() }
-    }
-    public var stopBits: UInt32 = 1 {
-        didSet { setOptions() }
+    // MARK: Publisher
+    private let changedPortStateSubject = PassthroughSubject<SGPortState, Never>()
+    public var changedPortStatePublisher: AnyPublisher<SGPortState, Never> {
+        return changedPortStateSubject.eraseToAnyPublisher()
     }
 
-    // MARK: Handler
-    public var receivedHandler: ((_ texts: String) -> Void)?
-    public var failureOpenHandler: ((_ port: SGPort) -> Void)?
-    public var portOpenedHandler: ((_ port: SGPort) -> Void)?
-    public var portClosedHandler: ((_ port: SGPort) -> Void)?
-    public var portRemovedHandler: ((_ port: SGPort) -> Void)?
+    private let receivedTextSubject = PassthroughSubject<(SGError?, String?), Never>()
+    public var receivedTextPublisher: AnyPublisher<(SGError?, String?), Never> {
+        return receivedTextSubject.eraseToAnyPublisher()
+    }
 
     init(_ portName: String) {
         name = portName
     }
 
     deinit {
-        close()
-    }
-
-    private func exitWithError(_ n: Int) {
-        logput("Error \(n)")
-        failureOpenHandler?(self)
+        try? close()
     }
 
     // MARK: Public Function
-    public func open() {
+    public func open() throws {
         var fd: Int32 = -1
 
-        fd = Darwin.open(name.cString(using: String.Encoding.ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
+        fd = Darwin.open(name.cString(using: .ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
         if fd == -1 {
-            return exitWithError(1)
+            throw SGError.couldNotOpenPort(name)
         }
         if fcntl(fd, F_SETFL, 0) == -1 {
-            return exitWithError(2)
+            throw SGError.couldNotOpenPort(name)
         }
 
         // ★★★ Start Communication ★★★ //
         fileDescriptor = fd
-        setOptions()
+        try setOptions()
         readTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         readTimer?.schedule(
             deadline: DispatchTime.now(),
@@ -64,27 +56,38 @@ public final class SGPort {
             self?.read()
         })
         readTimer?.setCancelHandler(handler: { [weak self] in
-            self?.close()
+            do {
+                // TODO: closeするとCancelされるから循環しているかも
+                try self?.close()
+            } catch {
+                logput(error.localizedDescription)
+            }
         })
         readTimer?.resume()
         state = SGPortState.open
-        portOpenedHandler?(self)
+        changedPortStateSubject.send(.open)
     }
 
-    public func close() {
+    public func close() throws {
         readTimer?.cancel()
         readTimer = nil
-        if tcdrain(fileDescriptor) == -1 { return }
+        if tcdrain(fileDescriptor) == -1 {
+            throw SGError.couldNotClosePort(name)
+        }
         var options = termios()
-        if tcsetattr(fileDescriptor, TCSADRAIN, &options) == -1 { return }
+        if tcsetattr(fileDescriptor, TCSADRAIN, &options) == -1 {
+            throw SGError.couldNotClosePort(name)
+        }
         Darwin.close(fileDescriptor)
         state = SGPortState.close
         fileDescriptor = -1
-        portClosedHandler?(self)
+        changedPortStateSubject.send(.close)
     }
 
-    public func send(_ text: String) {
-        if state != .open { return }
+    public func send(_ text: String) throws {
+        if state != .open {
+            throw SGError.portIsNotOpen(name)
+        }
         var bytes: [UInt32] = text.unicodeScalars.map { uni -> UInt32 in
             return uni.value
         }
@@ -92,11 +95,11 @@ public final class SGPort {
     }
 
     // MARK: Set Options
-    private func setOptions() {
+    private func setOptions() throws {
         if fileDescriptor < 1 { return }
         var options = termios()
         if tcgetattr(fileDescriptor, &options) == -1 {
-            return exitWithError(3)
+            throw SGError.couldNotSetOptions(name)
         }
         cfmakeraw(&options)
         options.updateC_CC(VMIN, v: 1)
@@ -142,7 +145,40 @@ public final class SGPort {
         cfsetspeed(&options, speed_t(baudRate))
 
         if tcsetattr(fileDescriptor, TCSANOW, &options) == -1 {
-            return exitWithError(4)
+            throw SGError.couldNotSetOptions(name)
+        }
+    }
+
+    public func setBaudRate(_ baudRate: Int32) throws {
+        let previousBaudRate = self.baudRate
+        self.baudRate = baudRate
+        do {
+            try setOptions()
+        } catch {
+            self.baudRate = previousBaudRate
+            throw error
+        }
+    }
+
+    public func setParity(_ parity: SGParity) throws {
+        let previousParity = self.parity
+        self.parity = parity
+        do {
+            try setOptions()
+        } catch {
+            self.parity = previousParity
+            throw error
+        }
+    }
+
+    public func setStopBits(_ stopBits: UInt32) throws {
+        let previousStopBits = self.stopBits
+        self.stopBits = stopBits
+        do {
+            try setOptions()
+        } catch {
+            self.stopBits = previousStopBits
+            throw error
         }
     }
 
@@ -154,7 +190,7 @@ public final class SGPort {
         if tcsetattr(fileDescriptor, TCSADRAIN, &originalPortOptions) == -1 { return }
         Darwin.close(fileDescriptor)
         state = SGPortState.removed
-        portRemovedHandler?(self)
+        changedPortStateSubject.send(.removed)
     }
 
     func fallSleep() {
@@ -169,12 +205,15 @@ public final class SGPort {
 
     // MARK: Private Function
     private func read() {
-        if state != .open { return }
+        guard state == .open else {
+            receivedTextSubject.send((SGError.portIsNotOpen(name), nil))
+            return
+        }
         var buffer = [UInt8](repeating: 0, count: 1024)
         let readLength = Darwin.read(fileDescriptor, &buffer, 1024)
-        if  readLength < 1 { return }
+        if readLength < 1 { return }
         let data = Data(bytes: buffer, count: readLength)
-        let text = String(data: data, encoding: String.Encoding.ascii)!
-        receivedHandler?(text)
+        let text = String(data: data, encoding: .ascii)!
+        receivedTextSubject.send((nil, text))
     }
 }

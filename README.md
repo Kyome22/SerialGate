@@ -27,59 +27,56 @@ Serial Communication Demo App for Arduino or mbed is in this Project.
 - Get serial ports 
 
 ```swift
-let manager = SGPortManager.shared
-let serialPorts = manager.availablePorts
+import Combine
+import SerialGate
+
+var cancellables = Set<AnyCancellable>()
+
+SGPortManager.shared.availablePortsPublisher
+    .sink { ports in
+        // get ports
+    }
+    .store(in: &cancellables)
 ```
 
 - Open a serial port
 
 ```swift
-port.baudRate = B9600
-port.open()
+try? port.setBaudRate(B9600)
+try? port.open()
 ```
 
 - Close a serial port
 
 ```swift
-port.close()
+try? port.close()
 ```
 
 - Send a message
 
 ```swift
 let text: String = "Hello World"
-port.send(text)
+try? port.send(text)
 ```
 
 - Read messages
 
 ```swift
-port.receivedHandler = { text in
-    Swift.print(text)
-}
+port.receivedTextPublisher
+    .sink { (error, text) in 
+        if let text {
+            Swift.print(text)
+        }
+    }
+    .store(in: &cancellables)
 ```
 
 - Notifications about Port
 
 ```swift
-port.portOpenedHandler = { port in
-    Swift.print("Port: \(port.name) Opend")
-}
-port.portClosedHandler = { port in
-    Swift.print("Port: \(port.name) Closed")
-}
-port.portClosedHandler = { port in
-    Swift.print("Port: \(port.name) Removed")
-}
-port.failureOpenHandler = { port in
-    Swift.print("Failure Open Port \(port.name)")
-}
-```
-
-- Get notification of updated of availablePorts.
-
-```swift
-port.updatedAvailablePortsHandler = {
-    // something to do
-}
+port.changedPortStatePublisher
+    .sink { portState in 
+        Swift.print(portState.rawValue)
+    }
+    .store(in: &cancellables)
 ```

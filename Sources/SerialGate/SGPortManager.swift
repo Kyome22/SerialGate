@@ -1,116 +1,113 @@
 import AppKit
+import Combine
 import IOKit
 import IOKit.serial
 
 public final class SGPortManager {
     public static let shared = SGPortManager()
 
-    public private(set) var availablePorts = [SGPort]()
-    public var updatedAvailablePortsHandler: (() -> Void)?
-
     private let detector = SGUSBDetector()
-    private var sleepObserver: NSObjectProtocol?
-    private var wakeObserver: NSObjectProtocol?
-    private var terminateObserver: NSObjectProtocol?
+    private var cancellables = Set<AnyCancellable>()
+
+    private let availablePortsSubject = CurrentValueSubject<[SGPort], Never>([])
+    public var availablePortsPublisher: AnyPublisher<[SGPort], Never> {
+        return availablePortsSubject.eraseToAnyPublisher()
+    }
 
     private init() {
         registerNotifications()
         setAvailablePorts()
     }
 
-    deinit {
-        let wsnc = NSWorkspace.shared.notificationCenter
-        if let sleepObserver = sleepObserver {
-            wsnc.removeObserver(sleepObserver)
-        }
-        if let wakeObserver = wakeObserver {
-            wsnc.removeObserver(wakeObserver)
-        }
-        let nc = NotificationCenter.default
-        if terminateObserver != nil {
-            nc.removeObserver(terminateObserver!)
-        }
-    }
-
     // MARK: Notifications
     private func registerNotifications() {
         // MARK: USB Detector
-        detector.addedDeviceHandler = {
-            // It is necessary to wait for a while to be updated.
-            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 1.0) {
-                self.addedPorts()
+        detector.addedDevicePublisher
+            .delay(for: .seconds(1), scheduler: RunLoop.current)
+            .sink { [weak self] in
+                self?.addedPorts()
             }
-        }
-        detector.removedDeviceHandler = { [weak self] in
-            self?.removedPorts()
-        }
+            .store(in: &cancellables)
+        detector.removedDevicePublisher
+            .sink { [weak self] in
+                self?.removedPorts()
+            }
+            .store(in: &cancellables)
         detector.start()
 
         // MARK: Sleep/Wake
         let wsnc = NSWorkspace.shared.notificationCenter
-        sleepObserver = wsnc.addObserver(forName: NSWorkspace.willSleepNotification,
-                                         object: nil, queue: nil) { [weak self] (n) in
-            self?.availablePorts.forEach { (port) in
-                if port.state == .open {
-                    port.fallSleep()
+        wsnc.publisher(for: NSWorkspace.willSleepNotification)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                availablePortsSubject.value.forEach { port in
+                    if port.state == .open {
+                        port.fallSleep()
+                    }
                 }
             }
-        }
-        wakeObserver = wsnc.addObserver(forName: NSWorkspace.didWakeNotification,
-                                        object: nil, queue: nil) { [weak self] (n) in
-            self?.availablePorts.forEach { (port) in
-                if port.state == .sleeping {
-                    port.wakeUp()
+            .store(in: &cancellables)
+
+        wsnc.publisher(for: NSWorkspace.didWakeNotification)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                availablePortsSubject.value.forEach { port in
+                    if port.state == .sleeping {
+                        port.wakeUp()
+                    }
                 }
             }
-        }
+            .store(in: &cancellables)
 
         // MARK: Terminate
         let nc = NotificationCenter.default
-        terminateObserver = nc.addObserver(forName: NSApplication.willTerminateNotification,
-                                           object: nil, queue: nil) { [weak self] (n) in
-            self?.availablePorts.forEach({ (port) in
-                port.close()
-            })
-            self?.availablePorts.removeAll()
-        }
+        nc.publisher(for: NSApplication.willTerminateNotification)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                availablePortsSubject.value.forEach { port in
+                    try? port.close()
+                }
+                availablePortsSubject.value.removeAll()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: Serial Ports
     private func setAvailablePorts() {
         let device = findDevice()
         let portList = getPortList(device)
-        portList.forEach { (portName) in
-            availablePorts.append(SGPort(portName))
+        portList.forEach { portName in
+            availablePortsSubject.value.append(SGPort(portName))
         }
     }
 
     private func addedPorts() {
         let device = findDevice()
         let portList = getPortList(device)
-        portList.forEach { (portName) in
-            if !availablePorts.contains(where: { (port) -> Bool in
-                return port.name == portName
-            }) {
-                availablePorts.insert(SGPort(portName), at: 0)
+        let newPorts = portList.compactMap { portName -> SGPort? in
+            if availablePortsSubject.value.contains(where: { $0.name == portName }) {
+                return nil
+            } else {
+                return SGPort(portName)
             }
         }
-        updatedAvailablePortsHandler?()
+        if !newPorts.isEmpty {
+            availablePortsSubject.value.insert(contentsOf: newPorts, at: 0)
+        }
     }
 
     private func removedPorts() {
         let device = findDevice()
         let portList = getPortList(device)
-        let removedPorts: [SGPort] = availablePorts.filter { (port) -> Bool in
+        let removedPorts = availablePortsSubject.value.filter { port in
             return !portList.contains(port.name)
         }
-        removedPorts.forEach { (port) in
+        removedPorts.forEach { port in
             port.removed()
-            availablePorts = availablePorts.filter({ (availablePort) -> Bool in
-                return port.name != availablePort.name
-            })
         }
-        updatedAvailablePortsHandler?()
+        availablePortsSubject.value.removeAll { port in
+            return removedPorts.contains(where: { $0.name == port.name })
+        }
     }
 
     private func findDevice() -> io_iterator_t {

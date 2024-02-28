@@ -1,3 +1,4 @@
+import Combine
 import IOKit.usb
 
 final class SGUSBDetector {
@@ -5,8 +6,15 @@ final class SGUSBDetector {
     private var addedIterator: io_iterator_t = 0
     private var removedIterator: io_iterator_t = 0
 
-    var addedDeviceHandler: (() -> Void)?
-    var removedDeviceHandler: (() -> Void)?
+    private let addedDeviceSubject = PassthroughSubject<Void, Never>()
+    var addedDevicePublisher: AnyPublisher<Void, Never> {
+        return addedDeviceSubject.eraseToAnyPublisher()
+    }
+
+    private let removedDeviceSubject = PassthroughSubject<Void, Never>()
+    var removedDevicePublisher: AnyPublisher<Void, Never> {
+        return removedDeviceSubject.eraseToAnyPublisher()
+    }
 
     deinit {
         IOObjectRelease(addedIterator)
@@ -24,7 +32,7 @@ final class SGUSBDetector {
         // MARK: Added Notification
         let addedCallback: IOServiceMatchingCallback = { (pointer, iterator) in
             let detector = Unmanaged<SGUSBDetector>.fromOpaque(pointer!).takeUnretainedValue()
-            detector.addedDeviceHandler?()
+            detector.addedDeviceSubject.send()
             while case let device = IOIteratorNext(iterator), device != IO_OBJECT_NULL {
                 IOObjectRelease(device)
             }
@@ -41,8 +49,8 @@ final class SGUSBDetector {
 
         // MARK: Removed Notification
         let removedCallback: IOServiceMatchingCallback = { (pointer, iterator) in
-            let watcher = Unmanaged<SGUSBDetector>.fromOpaque(pointer!).takeUnretainedValue()
-            watcher.removedDeviceHandler?()
+            let detector = Unmanaged<SGUSBDetector>.fromOpaque(pointer!).takeUnretainedValue()
+            detector.removedDeviceSubject.send()
             while case let device = IOIteratorNext(iterator), device != IO_OBJECT_NULL {
                 IOObjectRelease(device)
             }

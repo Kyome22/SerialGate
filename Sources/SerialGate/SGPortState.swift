@@ -1,4 +1,4 @@
-public enum SGPortState: Int {
+public enum SGPortState: String {
     case open
     case close
     case sleeping
