@@ -1,19 +1,10 @@
-//
-//  SGPortManager.swift
-//  SerialGate
-//
-//  Created by Takuto Nakamura on 2019/02/13.
-//  Copyright © 2019 Takuto Nakamura. All rights reserved.
-//
-
 import AppKit
 import IOKit
 import IOKit.serial
 
 public final class SGPortManager {
-    
     public static let shared = SGPortManager()
-    
+
     public private(set) var availablePorts = [SGPort]()
     public var updatedAvailablePortsHandler: (() -> Void)?
 
@@ -21,12 +12,12 @@ public final class SGPortManager {
     private var sleepObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
     private var terminateObserver: NSObjectProtocol?
-    
+
     private init() {
         registerNotifications()
         setAvailablePorts()
     }
-    
+
     deinit {
         let wsnc = NSWorkspace.shared.notificationCenter
         if let sleepObserver = sleepObserver {
@@ -40,11 +31,10 @@ public final class SGPortManager {
             nc.removeObserver(terminateObserver!)
         }
     }
-    
-    // MARK: ★★★ Notifications ★★★
+
+    // MARK: Notifications
     private func registerNotifications() {
-        
-        // MARK: ★★★ USB Detector ★★★
+        // MARK: USB Detector
         detector.addedDeviceHandler = {
             // It is necessary to wait for a while to be updated.
             DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 1.0) {
@@ -55,8 +45,8 @@ public final class SGPortManager {
             self?.removedPorts()
         }
         detector.start()
-        
-        // MARK: ★★★ Sleep/Wake ★★★
+
+        // MARK: Sleep/Wake
         let wsnc = NSWorkspace.shared.notificationCenter
         sleepObserver = wsnc.addObserver(forName: NSWorkspace.willSleepNotification,
                                          object: nil, queue: nil) { [weak self] (n) in
@@ -74,8 +64,8 @@ public final class SGPortManager {
                 }
             }
         }
-        
-        // MARK: ★★★ Terminate ★★★
+
+        // MARK: Terminate
         let nc = NotificationCenter.default
         terminateObserver = nc.addObserver(forName: NSApplication.willTerminateNotification,
                                            object: nil, queue: nil) { [weak self] (n) in
@@ -85,8 +75,8 @@ public final class SGPortManager {
             self?.availablePorts.removeAll()
         }
     }
-    
-    // MARK: ★★★ Serial Ports ★★★
+
+    // MARK: Serial Ports
     private func setAvailablePorts() {
         let device = findDevice()
         let portList = getPortList(device)
@@ -94,7 +84,7 @@ public final class SGPortManager {
             availablePorts.append(SGPort(portName))
         }
     }
-    
+
     private func addedPorts() {
         let device = findDevice()
         let portList = getPortList(device)
@@ -107,7 +97,7 @@ public final class SGPortManager {
         }
         updatedAvailablePortsHandler?()
     }
-    
+
     private func removedPorts() {
         let device = findDevice()
         let portList = getPortList(device)
@@ -122,7 +112,7 @@ public final class SGPortManager {
         }
         updatedAvailablePortsHandler?()
     }
-    
+
     private func findDevice() -> io_iterator_t {
         var portIterator: io_iterator_t = 0
         let matchingDict: CFMutableDictionary = IOServiceMatching(kIOSerialBSDServiceValue)
@@ -138,7 +128,7 @@ public final class SGPortManager {
         }
         return portIterator
     }
-    
+
     private func getPortList(_ iterator: io_iterator_t) -> [String] {
         var ports = [String]()
         while case let object = IOIteratorNext(iterator), object != IO_OBJECT_NULL {
@@ -150,5 +140,4 @@ public final class SGPortManager {
         IOObjectRelease(iterator)
         return ports.reversed()
     }
-    
 }

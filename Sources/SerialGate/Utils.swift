@@ -1,21 +1,21 @@
-//
-//  Utils.swift
-//  SerialGate
-//
-//  Created by Takuto Nakamura on 2020/04/12.
-//  Copyright © 2020 Takuto Nakamura. All rights reserved.
-//
-
 import Darwin
+import Foundation
 
-func logput(_ item: Any..., file: String = #file, line: Int = #line, function: String = #function) {
-    #if DEBUG
-    Swift.print("Log: \(file):Line\(line):\(function)", item)
-    #endif
+func logput(
+    _ items: Any...,
+    file: String = #file,
+    line: Int = #line,
+    function: String = #function
+) {
+#if DEBUG
+    let fileName = URL(fileURLWithPath: file).lastPathComponent
+    var array: [Any] = ["💫Log: \(fileName)", "Line:\(line)", function]
+    array.append(contentsOf: items)
+    Swift.print(array)
+#endif
 }
 
 extension termios {
-    
     mutating func updateC_CC(_ n: Int32, v: UInt8) {
         switch n {
         case  0: c_cc.0  = v
@@ -41,5 +41,4 @@ extension termios {
         default: break
         }
     }
-    
 }
