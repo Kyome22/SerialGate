@@ -1,0 +1,372 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1CF4145C2B90077100A4DB17 /* SerialGateDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF4145B2B90077100A4DB17 /* SerialGateDemoApp.swift */; };
+		1CF4145E2B90077100A4DB17 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF4145D2B90077100A4DB17 /* ContentView.swift */; };
+		1CF414602B90077200A4DB17 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1CF4145F2B90077200A4DB17 /* Assets.xcassets */; };
+		1CF414632B90077200A4DB17 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1CF414622B90077200A4DB17 /* Preview Assets.xcassets */; };
+		1CF4146D2B900A9A00A4DB17 /* SerialGate in Frameworks */ = {isa = PBXBuildFile; productRef = 1CF4146C2B900A9A00A4DB17 /* SerialGate */; };
+		1CF4146F2B9015C200A4DB17 /* ContentViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF4146E2B9015C200A4DB17 /* ContentViewState.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1CF414582B90077100A4DB17 /* SerialGateDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SerialGateDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CF4145B2B90077100A4DB17 /* SerialGateDemoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialGateDemoApp.swift; sourceTree = "<group>"; };
+		1CF4145D2B90077100A4DB17 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		1CF4145F2B90077200A4DB17 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1CF414622B90077200A4DB17 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		1CF414642B90077200A4DB17 /* SerialGateDemo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SerialGateDemo.entitlements; sourceTree = "<group>"; };
+		1CF4146A2B900A9000A4DB17 /* SerialGate */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SerialGate; path = ..; sourceTree = "<group>"; };
+		1CF4146E2B9015C200A4DB17 /* ContentViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewState.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1CF414552B90077100A4DB17 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1CF4146D2B900A9A00A4DB17 /* SerialGate in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1CF4144F2B90077100A4DB17 = {
+			isa = PBXGroup;
+			children = (
+				1CF4146A2B900A9000A4DB17 /* SerialGate */,
+				1CF4145A2B90077100A4DB17 /* SerialGateDemo */,
+				1CF414592B90077100A4DB17 /* Products */,
+				1CF4146B2B900A9A00A4DB17 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		1CF414592B90077100A4DB17 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1CF414582B90077100A4DB17 /* SerialGateDemo.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1CF4145A2B90077100A4DB17 /* SerialGateDemo */ = {
+			isa = PBXGroup;
+			children = (
+				1CF414642B90077200A4DB17 /* SerialGateDemo.entitlements */,
+				1CF4145F2B90077200A4DB17 /* Assets.xcassets */,
+				1CF4145B2B90077100A4DB17 /* SerialGateDemoApp.swift */,
+				1CF4145D2B90077100A4DB17 /* ContentView.swift */,
+				1CF4146E2B9015C200A4DB17 /* ContentViewState.swift */,
+				1CF414612B90077200A4DB17 /* Preview Content */,
+			);
+			path = SerialGateDemo;
+			sourceTree = "<group>";
+		};
+		1CF414612B90077200A4DB17 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				1CF414622B90077200A4DB17 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		1CF4146B2B900A9A00A4DB17 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1CF414572B90077100A4DB17 /* SerialGateDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1CF414672B90077200A4DB17 /* Build configuration list for PBXNativeTarget "SerialGateDemo" */;
+			buildPhases = (
+				1CF414542B90077100A4DB17 /* Sources */,
+				1CF414552B90077100A4DB17 /* Frameworks */,
+				1CF414562B90077100A4DB17 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SerialGateDemo;
+			packageProductDependencies = (
+				1CF4146C2B900A9A00A4DB17 /* SerialGate */,
+			);
+			productName = SerialGateDemo;
+			productReference = 1CF414582B90077100A4DB17 /* SerialGateDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1CF414502B90077100A4DB17 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1520;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					1CF414572B90077100A4DB17 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+				};
+			};
+			buildConfigurationList = 1CF414532B90077100A4DB17 /* Build configuration list for PBXProject "SerialGateDemo" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 1CF4144F2B90077100A4DB17;
+			productRefGroup = 1CF414592B90077100A4DB17 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1CF414572B90077100A4DB17 /* SerialGateDemo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1CF414562B90077100A4DB17 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1CF414632B90077200A4DB17 /* Preview Assets.xcassets in Resources */,
+				1CF414602B90077200A4DB17 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1CF414542B90077100A4DB17 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1CF4145E2B90077100A4DB17 /* ContentView.swift in Sources */,
+				1CF4146F2B9015C200A4DB17 /* ContentViewState.swift in Sources */,
+				1CF4145C2B90077100A4DB17 /* SerialGateDemoApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1CF414652B90077200A4DB17 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		1CF414662B90077200A4DB17 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		1CF414682B90077200A4DB17 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SerialGateDemo/SerialGateDemo.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SerialGateDemo/Preview Content\"";
+				DEVELOPMENT_TEAM = VJ5N2X84K8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kyome.SerialGateDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		1CF414692B90077200A4DB17 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SerialGateDemo/SerialGateDemo.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SerialGateDemo/Preview Content\"";
+				DEVELOPMENT_TEAM = VJ5N2X84K8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kyome.SerialGateDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1CF414532B90077100A4DB17 /* Build configuration list for PBXProject "SerialGateDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1CF414652B90077200A4DB17 /* Debug */,
+				1CF414662B90077200A4DB17 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1CF414672B90077200A4DB17 /* Build configuration list for PBXNativeTarget "SerialGateDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1CF414682B90077200A4DB17 /* Debug */,
+				1CF414692B90077200A4DB17 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1CF4146C2B900A9A00A4DB17 /* SerialGate */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SerialGate;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 1CF414502B90077100A4DB17 /* Project object */;
+}

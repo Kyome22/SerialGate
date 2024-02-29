@@ -13,14 +13,17 @@ Serial Communication Library for macOS written in Swift.
 
 1. DependencyList is available through [Swift Package Manager](https://github.com/apple/swift-package-manager).
 2. Put a check mark for "USB" in Capabilities of Targets (SandBox)
-   <img src="/Screenshots/sandbox.png" alt="sandbox" width="330px" />
+   <img src="Screenshots/sandbox.png" alt="sandbox" width="540px" />
 3. Edit the entitlements and add `com.apple.security.device.serial`
-   <img src="/Screenshots/entitlements.png" alt="entitlements" width="255px" />
+   <img src="Screenshots/entitlements.png" alt="entitlements" width="470px" />
 
 ## Demo
 
 Serial Communication Demo App for Arduino or mbed is in this Project.
-<img src="/Screenshots/DemoApp.png" alt="demo" width="260px" />
+
+<img src="Screenshots/demo.png" alt="demo" width="432px" />
+
+Sample Arduino code is [here](Arduino/TestForSerialGate.ino).
 
 ## Usage
 

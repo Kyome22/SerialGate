@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-public final class SGPort {
+public final class SGPort: Hashable, Identifiable {
     private var fileDescriptor: Int32 = 0
     private var originalPortOptions = termios()
     private var readTimer: DispatchSourceTimer?
@@ -11,6 +11,8 @@ public final class SGPort {
     public private(set) var baudRate: Int32 = B9600
     public private(set) var parity: SGParity = .none
     public private(set) var stopBits: UInt32 = 1
+
+    public var id: String { name }
 
     // MARK: Publisher
     private let changedPortStateSubject = PassthroughSubject<SGPortState, Never>()
@@ -215,5 +217,15 @@ public final class SGPort {
         let data = Data(bytes: buffer, count: readLength)
         let text = String(data: data, encoding: .ascii)!
         receivedTextSubject.send((nil, text))
+    }
+
+    // MARK: Equatable
+    public static func == (lhs: SGPort, rhs: SGPort) -> Bool {
+        return lhs === rhs
+    }
+
+    // MARK: Hashable
+    public func hash(into hasher: inout Hasher) {
+        ObjectIdentifier(self).hash(into: &hasher)
     }
 }

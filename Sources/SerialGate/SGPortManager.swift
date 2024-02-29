@@ -29,6 +29,7 @@ public final class SGPortManager {
             }
             .store(in: &cancellables)
         detector.removedDevicePublisher
+            .delay(for: .seconds(1), scheduler: RunLoop.current)
             .sink { [weak self] in
                 self?.removedPorts()
             }
