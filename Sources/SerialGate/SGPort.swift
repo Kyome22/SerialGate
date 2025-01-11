@@ -47,22 +47,17 @@ public final class SGPort: Hashable, Identifiable, Sendable {
     }
 
     deinit {
-        print("deinit SGPort")
-        do {
-            try close()
-        } catch {
-            logput(error.localizedDescription)
-        }
+        try? close()
     }
 
     // MARK: Public Function
     public func open() throws {
         let name = protectedName.withLock(\.self)
-        let fd = Darwin.open(name.cString(using: .ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
-        guard fd != -1 else {
+        guard protectedPortState.withLock({ $0 == .close }) else {
             throw SGError.couldNotOpenPort(name)
         }
-        guard fcntl(fd, F_SETFL, .zero) != -1 else {
+        let fd = Darwin.open(name.cString(using: .ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
+        guard fd != -1, fcntl(fd, F_SETFL, .zero) != -1 else {
             throw SGError.couldNotOpenPort(name)
         }
 
@@ -78,13 +73,6 @@ public final class SGPort: Hashable, Identifiable, Sendable {
         readTimer.setEventHandler { [weak self] in
             self?.read()
         }
-        readTimer.setCancelHandler { [weak self] in
-            do {
-                try self?.close()
-            } catch {
-                logput(error.localizedDescription)
-            }
-        }
         readTimer.resume()
         protectedReadTimer.withLockUnchecked { $0 = readTimer }
         protectedPortState.withLock { $0 = .open }
@@ -92,6 +80,10 @@ public final class SGPort: Hashable, Identifiable, Sendable {
     }
 
     public func close() throws {
+        guard protectedPortState.withLock({ [.open, .sleeping].contains($0) }) else {
+            let name = protectedName.withLock(\.self)
+            throw SGError.portIsNotOpen(name)
+        }
         protectedReadTimer.withLockUnchecked {
             $0?.cancel()
             $0 = nil
@@ -218,12 +210,10 @@ public final class SGPort: Hashable, Identifiable, Sendable {
         }
         let fileDescriptor = protectedFileDescriptor.withLock(\.self)
         var options = termios()
-        guard tcdrain(fileDescriptor) != -1,
-              tcsetattr(fileDescriptor, TCSADRAIN, &options) != -1 else {
-            return
+        if tcdrain(fileDescriptor) != -1,
+           tcsetattr(fileDescriptor, TCSADRAIN, &options) != -1 {
+            Darwin.close(fileDescriptor)
         }
-        Darwin.close(fileDescriptor)
-        // protectedFileDescriptor.withLock { $0 = -1 }
         protectedPortState.withLock { $0 = .removed }
         portStateSubject.send(.removed)
     }

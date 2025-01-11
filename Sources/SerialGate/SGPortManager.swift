@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import IOKit
 import IOKit.serial
+import Logput
 import os
 
 public final class SGPortManager: Sendable {
@@ -25,11 +26,6 @@ public final class SGPortManager: Sendable {
     private init() {
         registerNotifications()
         setAvailablePorts()
-    }
-
-    deinit {
-        logput("deinit SGPortManager")
-        terminate()
     }
 
     // MARK: Notifications
@@ -112,15 +108,8 @@ public final class SGPortManager: Sendable {
     }
 
     private func terminate() {
-        availablePortsSubject.value.forEach { port in
-            do {
-                try port.close()
-            } catch {
-                logput(error.localizedDescription)
-            }
-        }
         availablePortsSubject.value.removeAll()
-
+        protectedTask.withLock { $0?.cancel() }
     }
 
     private func findDevice() -> io_iterator_t {

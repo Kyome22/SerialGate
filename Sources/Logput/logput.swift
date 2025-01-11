@@ -1,6 +1,6 @@
 import Foundation
 
-func logput(
+public func logput(
     _ items: Any...,
     file: String = #file,
     line: Int = #line,

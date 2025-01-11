@@ -2,6 +2,10 @@
 
 import PackageDescription
 
+let swiftSettings: [SwiftSetting] = [
+    .enableUpcomingFeature("ExistentialAny"),
+]
+
 let package = Package(
     name: "SerialGate",
     platforms: [
@@ -9,13 +13,23 @@ let package = Package(
     ],
     products: [
         .library(
+            name: "Logput",
+            targets: ["Logput"]
+        ),
+        .library(
             name: "SerialGate",
             targets: ["SerialGate"]
-        )
+        ),
     ],
     targets: [
         .target(
-            name: "SerialGate"
+            name: "Logput",
+            swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "SerialGate",
+            dependencies: ["Logput"],
+            swiftSettings: swiftSettings
         )
     ]
 )

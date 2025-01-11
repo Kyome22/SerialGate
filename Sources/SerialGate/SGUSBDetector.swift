@@ -1,4 +1,5 @@
 import IOKit.usb
+import Logput
 import os
 
 final class SGUSBDetector: Sendable {
@@ -32,8 +33,12 @@ final class SGUSBDetector: Sendable {
         }
     }
 
+    init() {
+        logput("init SGUSBDetector")
+    }
+
     deinit {
-        print("deinit SGUSBDetector")
+        logput("deinit SGUSBDetector")
         protectedAddedIterator.withLock { _ = IOObjectRelease($0) }
         protectedRemovedIterator.withLock { _ = IOObjectRelease($0) }
         protectedNotificationPort.withLock { IONotificationPortDestroy($0) }
