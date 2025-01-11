@@ -55,7 +55,7 @@ final class ContentViewModel: ObservableObject {
                         for await portState in port.portStateStream {
                             guard let self else { return }
                             await MainActor.run {
-                                stateText = "Port: \(port.name) - \(portState.rawValue)"
+                                stateText = "Port: \(port.name) - \(String(describing: portState))"
                             }
                         }
                     }
