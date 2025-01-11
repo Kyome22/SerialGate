@@ -15,8 +15,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SerialGate",
-            resources: [.copy("PrivacyInfo.xcprivacy")]
+            name: "SerialGate"
         )
     ]
 )
