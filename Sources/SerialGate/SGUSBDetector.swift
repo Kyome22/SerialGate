@@ -3,9 +3,9 @@ import Logput
 import os
 
 final class SGUSBDetector: Sendable {
-    private let protectedNotificationPort = OSAllocatedUnfairLock<IONotificationPortRef>(
-        uncheckedState: IONotificationPortCreate(kIOMainPortDefault)
-    )
+    private let protectedRunLoop = OSAllocatedUnfairLock<CFRunLoop?>(uncheckedState: nil)
+    private let protectedNotificationPort = OSAllocatedUnfairLock<IONotificationPortRef?>(uncheckedState: nil)
+    private let protectedRunLoopSource = OSAllocatedUnfairLock<CFRunLoopSource?>(uncheckedState: nil)
     private let protectedAddedIterator = OSAllocatedUnfairLock<io_iterator_t>(initialState: .zero)
     private let protectedAddedHandler = OSAllocatedUnfairLock<(@Sendable () -> Void)?>(initialState: nil)
     private let protectedRemovedIterator = OSAllocatedUnfairLock<io_iterator_t>(initialState: .zero)
@@ -33,24 +33,17 @@ final class SGUSBDetector: Sendable {
         }
     }
 
-    init() {
-        logput("init SGUSBDetector")
-    }
-
-    deinit {
-        logput("deinit SGUSBDetector")
-        protectedAddedIterator.withLock { _ = IOObjectRelease($0) }
-        protectedRemovedIterator.withLock { _ = IOObjectRelease($0) }
-        protectedNotificationPort.withLock { IONotificationPortDestroy($0) }
-    }
-
     func start() {
+        let runLoop = CFRunLoopGetCurrent()
+        protectedRunLoop.withLockUnchecked { $0 = runLoop }
+        let notificationPort = IONotificationPortCreate(kIOMainPortDefault)
+        protectedNotificationPort.withLockUnchecked { $0 = notificationPort }
+        let runLoopSource = IONotificationPortGetRunLoopSource(notificationPort)!.takeRetainedValue()
+        protectedRunLoopSource.withLockUnchecked { $0 = runLoopSource }
+        CFRunLoopAddSource(runLoop, runLoopSource, .defaultMode)
+
         let matchingDict = IOServiceMatching(kIOUSBDeviceClassName)
         let opaqueSelf = Unmanaged.passUnretained(self).toOpaque()
-
-        let notificationPort = protectedNotificationPort.withLockUnchecked(\.self)
-        let runLoop = IONotificationPortGetRunLoopSource(notificationPort)!.takeRetainedValue()
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoop, CFRunLoopMode.defaultMode)
 
         // MARK: Added Notification
         let addedCallback: IOServiceMatchingCallback = { (pointer, iterator) in
@@ -89,5 +82,19 @@ final class SGUSBDetector: Sendable {
         while case let device = IOIteratorNext(removedIterator), device != IO_OBJECT_NULL {
             IOObjectRelease(device)
         }
+    }
+
+    func stop() {
+        guard let runLoop = protectedRunLoop.withLockUnchecked(\.self) else { return }
+        CFRunLoopStop(runLoop)
+
+        guard let runLoopSource = protectedRunLoopSource.withLockUnchecked(\.self) else { return }
+        CFRunLoopRemoveSource(runLoop, runLoopSource, .defaultMode)
+
+        protectedAddedIterator.withLock { _ = IOObjectRelease($0) }
+        protectedRemovedIterator.withLock { _ = IOObjectRelease($0) }
+
+        guard let notificationPort = protectedNotificationPort.withLockUnchecked(\.self) else { return }
+        IONotificationPortDestroy(notificationPort)
     }
 }

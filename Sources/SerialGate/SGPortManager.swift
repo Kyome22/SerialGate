@@ -110,6 +110,7 @@ public final class SGPortManager: Sendable {
     private func terminate() {
         availablePortsSubject.value.removeAll()
         protectedTask.withLock { $0?.cancel() }
+        detector.stop()
     }
 
     private func findDevice() -> io_iterator_t {
