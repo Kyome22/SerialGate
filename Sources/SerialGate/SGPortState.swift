@@ -1,4 +1,4 @@
-public enum SGPortState: String {
+public enum SGPortState: Sendable {
     case open
     case close
     case sleeping

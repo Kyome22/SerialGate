@@ -4,10 +4,9 @@ Serial Communication Library for macOS written in Swift.
 
 ## Requirements
 
-- Development with Xcode 15.2+
-- Written in Swift 5.9
-- swift-tools-version: 5.9
-- Compatible with macOS 11.0+
+- Development with Xcode 16.0+
+- Written in Swift 6.0
+- Compatible with macOS 13.0+
 
 ## Installation
 
@@ -19,7 +18,7 @@ Serial Communication Library for macOS written in Swift.
 
 ## Demo
 
-Serial Communication Demo App for Arduino or mbed is in this Project.
+Serial Communication Demo App for Arduino is in this Project.
 
 <img src="Screenshots/demo.png" alt="demo" width="432px" />
 
@@ -30,22 +29,19 @@ Sample Arduino code is [here](Arduino/TestForSerialGate.ino).
 - Get serial ports 
 
 ```swift
-import Combine
 import SerialGate
 
-var cancellables = Set<AnyCancellable>()
-
-SGPortManager.shared.availablePortsPublisher
-    .sink { ports in
+Task {
+    for await ports in SGPortManager.shared.availablePortsStream {
         // get ports
     }
-    .store(in: &cancellables)
+}
 ```
 
 - Open a serial port
 
 ```swift
-try? port.setBaudRate(B9600)
+try? port.set(baudRate: B9600)
 try? port.open()
 ```
 
@@ -65,21 +61,24 @@ try? port.send(text)
 - Read messages
 
 ```swift
-port.receivedTextPublisher
-    .sink { (error, text) in 
-        if let text {
+Task {
+    for await result in port.textStream {
+        switch result {
+        case let .success(text):
             Swift.print(text)
+        case let .failure(error):
+            Swift.print(error.localizedDescription)
         }
     }
-    .store(in: &cancellables)
+}
 ```
 
-- Notifications about Port
+- Notifications about Port State
 
 ```swift
-port.changedPortStatePublisher
-    .sink { portState in 
-        Swift.print(portState.rawValue)
+Task {
+    for await portState in port.portStateStream {
+        Swift.print(String(describing: portState))
     }
-    .store(in: &cancellables)
+}
 ```

@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1CD5D7D12D32D8A10088B889 /* Logput in Frameworks */ = {isa = PBXBuildFile; productRef = 1CD5D7D02D32D8A10088B889 /* Logput */; };
 		1CF4145C2B90077100A4DB17 /* SerialGateDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF4145B2B90077100A4DB17 /* SerialGateDemoApp.swift */; };
 		1CF4145E2B90077100A4DB17 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF4145D2B90077100A4DB17 /* ContentView.swift */; };
 		1CF414602B90077200A4DB17 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1CF4145F2B90077200A4DB17 /* Assets.xcassets */; };
-		1CF414632B90077200A4DB17 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1CF414622B90077200A4DB17 /* Preview Assets.xcassets */; };
 		1CF4146D2B900A9A00A4DB17 /* SerialGate in Frameworks */ = {isa = PBXBuildFile; productRef = 1CF4146C2B900A9A00A4DB17 /* SerialGate */; };
-		1CF4146F2B9015C200A4DB17 /* ContentViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF4146E2B9015C200A4DB17 /* ContentViewState.swift */; };
+		1CF4146F2B9015C200A4DB17 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF4146E2B9015C200A4DB17 /* ContentViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,10 +20,9 @@
 		1CF4145B2B90077100A4DB17 /* SerialGateDemoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialGateDemoApp.swift; sourceTree = "<group>"; };
 		1CF4145D2B90077100A4DB17 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1CF4145F2B90077200A4DB17 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		1CF414622B90077200A4DB17 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		1CF414642B90077200A4DB17 /* SerialGateDemo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SerialGateDemo.entitlements; sourceTree = "<group>"; };
 		1CF4146A2B900A9000A4DB17 /* SerialGate */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SerialGate; path = ..; sourceTree = "<group>"; };
-		1CF4146E2B9015C200A4DB17 /* ContentViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewState.swift; sourceTree = "<group>"; };
+		1CF4146E2B9015C200A4DB17 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +31,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1CF4146D2B900A9A00A4DB17 /* SerialGate in Frameworks */,
+				1CD5D7D12D32D8A10088B889 /* Logput in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -63,18 +63,9 @@
 				1CF4145F2B90077200A4DB17 /* Assets.xcassets */,
 				1CF4145B2B90077100A4DB17 /* SerialGateDemoApp.swift */,
 				1CF4145D2B90077100A4DB17 /* ContentView.swift */,
-				1CF4146E2B9015C200A4DB17 /* ContentViewState.swift */,
-				1CF414612B90077200A4DB17 /* Preview Content */,
+				1CF4146E2B9015C200A4DB17 /* ContentViewModel.swift */,
 			);
 			path = SerialGateDemo;
-			sourceTree = "<group>";
-		};
-		1CF414612B90077200A4DB17 /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				1CF414622B90077200A4DB17 /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 		1CF4146B2B900A9A00A4DB17 /* Frameworks */ = {
@@ -102,6 +93,7 @@
 			name = SerialGateDemo;
 			packageProductDependencies = (
 				1CF4146C2B900A9A00A4DB17 /* SerialGate */,
+				1CD5D7D02D32D8A10088B889 /* Logput */,
 			);
 			productName = SerialGateDemo;
 			productReference = 1CF414582B90077100A4DB17 /* SerialGateDemo.app */;
@@ -115,7 +107,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1520;
-				LastUpgradeCheck = 1520;
+				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					1CF414572B90077100A4DB17 = {
 						CreatedOnToolsVersion = 15.2;
@@ -145,7 +137,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1CF414632B90077200A4DB17 /* Preview Assets.xcassets in Resources */,
 				1CF414602B90077200A4DB17 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -158,7 +149,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1CF4145E2B90077100A4DB17 /* ContentView.swift in Sources */,
-				1CF4146F2B9015C200A4DB17 /* ContentViewState.swift in Sources */,
+				1CF4146F2B9015C200A4DB17 /* ContentViewModel.swift in Sources */,
 				1CF4145C2B90077100A4DB17 /* SerialGateDemoApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -200,6 +191,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -263,6 +255,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -288,12 +281,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SerialGateDemo/SerialGateDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"SerialGateDemo/Preview Content\"";
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = VJ5N2X84K8;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -307,7 +299,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.kyome.SerialGateDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -315,12 +307,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SerialGateDemo/SerialGateDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"SerialGateDemo/Preview Content\"";
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = VJ5N2X84K8;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -334,7 +325,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.kyome.SerialGateDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -362,6 +353,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		1CD5D7D02D32D8A10088B889 /* Logput */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Logput;
+		};
 		1CF4146C2B900A9A00A4DB17 /* SerialGate */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SerialGate;

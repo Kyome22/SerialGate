@@ -1,32 +1,49 @@
 import Combine
 import Foundation
+import os
 
-public final class SGPort: Hashable, Identifiable {
-    private var fileDescriptor: Int32 = 0
-    private var originalPortOptions = termios()
-    private var readTimer: DispatchSourceTimer?
-
-    public private(set) var name: String = ""
-    public private(set) var state: SGPortState = .close
-    public private(set) var baudRate: Int32 = B9600
-    public private(set) var parity: SGParity = .none
-    public private(set) var stopBits: UInt32 = 1
+public final class SGPort: Hashable, Identifiable, Sendable {
+    private let protectedFileDescriptor = OSAllocatedUnfairLock<Int32>(initialState: .zero)
+    private let protectedReadTimer = OSAllocatedUnfairLock<(any DispatchSourceTimer)?>(uncheckedState: nil)
+    private let protectedName: OSAllocatedUnfairLock<String>
+    private let protectedPortState = OSAllocatedUnfairLock<SGPortState>(initialState: .close)
+    private let protectedBaudRate = OSAllocatedUnfairLock<Int32>(initialState: B9600)
+    private let protectedParity = OSAllocatedUnfairLock<SGParity>(initialState: .none)
+    private let protectedStopBits = OSAllocatedUnfairLock<UInt32>(initialState: 1)
+    private let portStateSubject = PassthroughSubject<SGPortState, Never>()
+    private let textSubject = PassthroughSubject<Result<String, SGError>, Never>()
 
     public var id: String { name }
+    public var name: String { protectedName.withLock(\.self) }
+    public var portState: SGPortState { protectedPortState.withLock(\.self) }
+    public var baudRate: Int32 { protectedBaudRate.withLock(\.self) }
+    public var parity: SGParity { protectedParity.withLock(\.self) }
+    public var stopBits: UInt32 { protectedStopBits.withLock(\.self) }
 
-    // MARK: Publisher
-    private let changedPortStateSubject = PassthroughSubject<SGPortState, Never>()
-    public var changedPortStatePublisher: AnyPublisher<SGPortState, Never> {
-        return changedPortStateSubject.eraseToAnyPublisher()
+    public var portStateStream: AsyncStream<SGPortState> {
+        AsyncStream { continuation in
+            let cancellable = portStateSubject.sink { value in
+                continuation.yield(value)
+            }
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
     }
 
-    private let receivedTextSubject = PassthroughSubject<(SGError?, String?), Never>()
-    public var receivedTextPublisher: AnyPublisher<(SGError?, String?), Never> {
-        return receivedTextSubject.eraseToAnyPublisher()
+    public var textStream: AsyncStream<Result<String, SGError>> {
+        AsyncStream { continuation in
+            let cancellable = textSubject.sink { value in
+                continuation.yield(value)
+            }
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
     }
 
     init(_ portName: String) {
-        name = portName
+        protectedName = .init(initialState: portName)
     }
 
     deinit {
@@ -35,72 +52,72 @@ public final class SGPort: Hashable, Identifiable {
 
     // MARK: Public Function
     public func open() throws {
-        var fd: Int32 = -1
-
-        fd = Darwin.open(name.cString(using: .ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
-        if fd == -1 {
+        let name = protectedName.withLock(\.self)
+        guard protectedPortState.withLock({ $0 == .close }) else {
             throw SGError.couldNotOpenPort(name)
         }
-        if fcntl(fd, F_SETFL, 0) == -1 {
+        let fd = Darwin.open(name.cString(using: .ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
+        guard fd != -1, fcntl(fd, F_SETFL, .zero) != -1 else {
             throw SGError.couldNotOpenPort(name)
         }
 
         // ★★★ Start Communication ★★★ //
-        fileDescriptor = fd
+        protectedFileDescriptor.withLock { [fd] in $0 = fd }
         try setOptions()
-        readTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        readTimer?.schedule(
+        let readTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
+        readTimer.schedule(
             deadline: DispatchTime.now(),
             repeating: DispatchTimeInterval.nanoseconds(Int(10 * NSEC_PER_MSEC)),
             leeway: DispatchTimeInterval.nanoseconds(Int(5 * NSEC_PER_MSEC))
         )
-        readTimer?.setEventHandler(handler: { [weak self] in
+        readTimer.setEventHandler { [weak self] in
             self?.read()
-        })
-        readTimer?.setCancelHandler(handler: { [weak self] in
-            do {
-                // TODO: closeするとCancelされるから循環しているかも
-                try self?.close()
-            } catch {
-                logput(error.localizedDescription)
-            }
-        })
-        readTimer?.resume()
-        state = SGPortState.open
-        changedPortStateSubject.send(.open)
+        }
+        readTimer.resume()
+        protectedReadTimer.withLockUnchecked { $0 = readTimer }
+        protectedPortState.withLock { $0 = .open }
+        portStateSubject.send(.open)
     }
 
     public func close() throws {
-        readTimer?.cancel()
-        readTimer = nil
-        if tcdrain(fileDescriptor) == -1 {
-            throw SGError.couldNotClosePort(name)
+        guard protectedPortState.withLock({ [.open, .sleeping].contains($0) }) else {
+            let name = protectedName.withLock(\.self)
+            throw SGError.portIsNotOpen(name)
         }
+        protectedReadTimer.withLockUnchecked {
+            $0?.cancel()
+            $0 = nil
+        }
+        let fileDescriptor = protectedFileDescriptor.withLock(\.self)
         var options = termios()
-        if tcsetattr(fileDescriptor, TCSADRAIN, &options) == -1 {
+        guard tcdrain(fileDescriptor) != -1,
+              tcsetattr(fileDescriptor, TCSADRAIN, &options) != -1 else {
+            let name = protectedName.withLock(\.self)
             throw SGError.couldNotClosePort(name)
         }
         Darwin.close(fileDescriptor)
-        state = SGPortState.close
-        fileDescriptor = -1
-        changedPortStateSubject.send(.close)
+        protectedFileDescriptor.withLock { $0 = -1 }
+        protectedPortState.withLock { $0 = .close }
+        portStateSubject.send(.close)
     }
 
     public func send(_ text: String) throws {
-        if state != .open {
+        guard protectedPortState.withLock({ $0 == .open }) else {
+            let name = protectedName.withLock(\.self)
             throw SGError.portIsNotOpen(name)
         }
-        var bytes: [UInt32] = text.unicodeScalars.map { uni -> UInt32 in
-            return uni.value
-        }
+        let fileDescriptor = protectedFileDescriptor.withLock(\.self)
+        var bytes = text.unicodeScalars.map(\.value)
         Darwin.write(fileDescriptor, &bytes, bytes.count)
     }
 
     // MARK: Set Options
     private func setOptions() throws {
-        if fileDescriptor < 1 { return }
+        let fileDescriptor = protectedFileDescriptor.withLock(\.self)
+        guard fileDescriptor > 0 else { return }
         var options = termios()
-        if tcgetattr(fileDescriptor, &options) == -1 {
+        guard tcgetattr(fileDescriptor, &options) != -1 else {
+            let name = protectedName.withLock(\.self)
             throw SGError.couldNotSetOptions(name)
         }
         cfmakeraw(&options)
@@ -112,14 +129,14 @@ public final class SGPort: Hashable, Identifiable {
         options.c_cflag |= UInt(CS8)
 
         // StopBits
-        if 1 < stopBits {
+        if protectedStopBits.withLock({ $0 > 1 }) {
             options.c_cflag |= UInt(CSTOPB)
         } else {
             options.c_cflag &= ~UInt(CSTOPB)
         }
 
         // Parity
-        switch parity {
+        switch protectedParity.withLock(\.self) {
         case .none:
             options.c_cflag &= ~UInt(PARENB)
         case .even:
@@ -144,84 +161,98 @@ public final class SGPort: Hashable, Identifiable {
         options.c_cflag |= UInt(CREAD)
         options.c_lflag &= ~UInt(ICANON | ISIG)
 
-        cfsetspeed(&options, speed_t(baudRate))
-
-        if tcsetattr(fileDescriptor, TCSANOW, &options) == -1 {
+        let baudRate = protectedBaudRate.withLock(\.self)
+        guard cfsetspeed(&options, speed_t(baudRate)) != -1,
+              tcsetattr(fileDescriptor, TCSANOW, &options) != -1 else {
+            let name = protectedName.withLock(\.self)
             throw SGError.couldNotSetOptions(name)
         }
     }
 
-    public func setBaudRate(_ baudRate: Int32) throws {
-        let previousBaudRate = self.baudRate
-        self.baudRate = baudRate
+    public func set(baudRate: Int32) throws {
+        let previousBaudRate = protectedBaudRate.withLock(\.self)
+        protectedBaudRate.withLock { $0 = baudRate }
         do {
             try setOptions()
         } catch {
-            self.baudRate = previousBaudRate
+            protectedBaudRate.withLock { $0 = previousBaudRate }
             throw error
         }
     }
 
-    public func setParity(_ parity: SGParity) throws {
-        let previousParity = self.parity
-        self.parity = parity
+    public func set(parity: SGParity) throws {
+        let previousParity = protectedParity.withLock(\.self)
+        protectedParity.withLock { $0 = parity }
         do {
             try setOptions()
         } catch {
-            self.parity = previousParity
+            protectedParity.withLock { $0 = previousParity }
             throw error
         }
     }
 
-    public func setStopBits(_ stopBits: UInt32) throws {
-        let previousStopBits = self.stopBits
-        self.stopBits = stopBits
+    public func set(stopBits: UInt32) throws {
+        let previousStopBits = protectedStopBits.withLock(\.self)
+        protectedStopBits.withLock { $0 = stopBits }
         do {
             try setOptions()
         } catch {
-            self.stopBits = previousStopBits
+            protectedStopBits.withLock { $0 = previousStopBits }
             throw error
         }
     }
 
     // MARK: Internal Function
     func removed() {
-        readTimer?.cancel()
-        readTimer = nil
-        if tcdrain(fileDescriptor) == -1 { return }
-        if tcsetattr(fileDescriptor, TCSADRAIN, &originalPortOptions) == -1 { return }
-        Darwin.close(fileDescriptor)
-        state = SGPortState.removed
-        changedPortStateSubject.send(.removed)
+        protectedReadTimer.withLockUnchecked {
+            $0?.cancel()
+            $0 = nil
+        }
+        let fileDescriptor = protectedFileDescriptor.withLock(\.self)
+        var options = termios()
+        if tcdrain(fileDescriptor) != -1,
+           tcsetattr(fileDescriptor, TCSADRAIN, &options) != -1 {
+            Darwin.close(fileDescriptor)
+        }
+        protectedPortState.withLock { $0 = .removed }
+        portStateSubject.send(.removed)
     }
 
     func fallSleep() {
-        readTimer?.suspend()
-        state = SGPortState.sleeping
+        guard protectedPortState.withLock({ $0 == .open }) else { return }
+        protectedReadTimer.withLockUnchecked { $0?.suspend() }
+        protectedPortState.withLock { $0 = .sleeping }
     }
 
     func wakeUp() {
-        readTimer?.resume()
-        state = SGPortState.open
+        guard protectedPortState.withLock({ $0 == .sleeping }) else { return }
+        protectedReadTimer.withLockUnchecked { $0?.resume() }
+        protectedPortState.withLock { $0 = .open }
     }
 
     // MARK: Private Function
     private func read() {
-        guard state == .open else {
-            receivedTextSubject.send((SGError.portIsNotOpen(name), nil))
+        guard protectedPortState.withLock({ $0 == .open }) else {
+            let name = protectedName.withLock(\.self)
+            textSubject.send(.failure(.portIsNotOpen(name)))
             return
         }
-        var buffer = [UInt8](repeating: 0, count: 1024)
-        let readLength = Darwin.read(fileDescriptor, &buffer, 1024)
-        if readLength < 1 { return }
+        var buffer = [UInt8](repeating: .zero, count: 1024)
+        let fileDescriptor = protectedFileDescriptor.withLock(\.self)
+        let readLength = Darwin.read(fileDescriptor, &buffer, buffer.count)
+        guard readLength > 0 else { return }
         let data = Data(bytes: buffer, count: readLength)
-        let text = String(data: data, encoding: .ascii)!
-        receivedTextSubject.send((nil, text))
+        guard let text = String(data: data, encoding: .ascii) else {
+            let name = protectedName.withLock(\.self)
+            textSubject.send(.failure(.couldNotDecodeText(name)))
+            return
+        }
+        textSubject.send(.success(text))
     }
 
     // MARK: Equatable
     public static func == (lhs: SGPort, rhs: SGPort) -> Bool {
-        return lhs === rhs
+        lhs === rhs
     }
 
     // MARK: Hashable
