@@ -9,51 +9,51 @@ import SwiftUI
 import SerialGate
 
 struct ContentView: View {
-    @StateObject var viewState = ContentViewState()
+    @StateObject var viewModel = ContentViewModel()
 
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
                 Picker(selection: Binding<SGPort?>(
-                    get: { viewState.port },
-                    set: { viewState.selectPort($0) }
+                    get: { viewModel.port },
+                    set: { viewModel.select(port: $0) }
                 )) {
-                    Text(verbatim: "Select port")
+                    Text("Select port")
                         .tag(SGPort?.none)
-                    ForEach(viewState.portList) { port in
-                        Text(verbatim: port.name)
+                    ForEach(viewModel.portList) { port in
+                        Text(port.name)
                             .tag(SGPort?.some(port))
                     }
                 } label: {
-                    Text(verbatim: "Available ports:")
+                    Text("Available ports:")
                 }
-                .disabled(viewState.portIsOpening)
+                .disabled(viewModel.portIsOpening)
                 Button {
-                    viewState.openPort()
+                    viewModel.openPort()
                 } label: {
-                    Text(verbatim: "Open")
+                    Text("Open")
                 }
-                .disabled(viewState.portIsOpening)
+                .disabled(viewModel.portIsOpening)
                 Button {
-                    viewState.closePort()
+                    viewModel.closePort()
                 } label: {
-                    Text(verbatim: "Close")
+                    Text("Close")
                 }
-                .disabled(!viewState.portIsOpening)
+                .disabled(!viewModel.portIsOpening)
             }
             HStack {
-                TextField(text: $viewState.inputText) {
-                    Text(verbatim: "Text you want to send to the port")
+                TextField(text: $viewModel.inputText) {
+                    Text("Text you want to send to the port")
                 }
                 Button {
-                    viewState.sendPort()
+                    viewModel.sendPort()
                 } label: {
-                    Text(verbatim: "Send")
+                    Text("Send")
                 }
-                .disabled(!viewState.portIsOpening)
+                .disabled(!viewModel.portIsOpening)
             }
             LabeledContent {
-                Text(verbatim: viewState.stateText)
+                Text(viewModel.stateText)
                     .foregroundStyle(Color.secondary)
             } label: {
                 Text(verbatim: "Port state:")
@@ -61,7 +61,7 @@ struct ContentView: View {
             Divider()
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
-                    Text(verbatim: viewState.receivedText)
+                    Text(verbatim: viewModel.receivedText)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(4)
@@ -70,7 +70,7 @@ struct ContentView: View {
                         .id("bottomSpacer")
                 }
                 .border(Color.gray)
-                .onChange(of: viewState.receivedText) { _ in
+                .onChange(of: viewModel.receivedText) { _ in
                     withAnimation {
                         proxy.scrollTo("bottomSpacer")
                     }
@@ -79,6 +79,12 @@ struct ContentView: View {
         }
         .frame(minWidth: 400, minHeight: 400)
         .padding()
+        .onAppear {
+            viewModel.onAppear()
+        }
+        .onDisappear {
+            viewModel.onDisappear()
+        }
     }
 }
 

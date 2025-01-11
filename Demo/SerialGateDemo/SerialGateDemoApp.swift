@@ -13,14 +13,17 @@ struct SerialGateDemoApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            NavigationStack {
+                NavigationLink("Check", value: 0)
+                    .navigationDestination(for: Int.self) { _ in
+                        ContentView()
+                    }
+            }
         }
         .defaultSize(width: 400, height: 400)
     }
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return true
-    }
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 }
