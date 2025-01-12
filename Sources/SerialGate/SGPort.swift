@@ -6,11 +6,12 @@ public final class SGPort: Hashable, Identifiable, Sendable {
     private let protectedFileDescriptor = OSAllocatedUnfairLock<Int32>(initialState: .zero)
     private let protectedReadTimer = OSAllocatedUnfairLock<(any DispatchSourceTimer)?>(uncheckedState: nil)
     private let protectedName: OSAllocatedUnfairLock<String>
-    private let protectedPortState = OSAllocatedUnfairLock<SGPortState>(initialState: .close)
+    private let protectedPortState = OSAllocatedUnfairLock<SGPortState>(initialState: .closed)
     private let protectedBaudRate = OSAllocatedUnfairLock<Int32>(initialState: B9600)
     private let protectedParity = OSAllocatedUnfairLock<SGParity>(initialState: .none)
     private let protectedStopBits = OSAllocatedUnfairLock<UInt32>(initialState: 1)
     private let portStateSubject = PassthroughSubject<SGPortState, Never>()
+    private let dataSubject = PassthroughSubject<Result<Data, SGError>, Never>()
     private let textSubject = PassthroughSubject<Result<String, SGError>, Never>()
 
     public var id: String { name }
@@ -23,6 +24,17 @@ public final class SGPort: Hashable, Identifiable, Sendable {
     public var portStateStream: AsyncStream<SGPortState> {
         AsyncStream { continuation in
             let cancellable = portStateSubject.sink { value in
+                continuation.yield(value)
+            }
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+
+    public var dataStream: AsyncStream<Result<Data, SGError>> {
+        AsyncStream { continuation in
+            let cancellable = dataSubject.sink { value in
                 continuation.yield(value)
             }
             continuation.onTermination = { _ in
@@ -53,12 +65,12 @@ public final class SGPort: Hashable, Identifiable, Sendable {
     // MARK: Public Function
     public func open() throws {
         let name = protectedName.withLock(\.self)
-        guard protectedPortState.withLock({ $0 == .close }) else {
-            throw SGError.couldNotOpenPort(name)
+        guard protectedPortState.withLock({ $0 == .closed }) else {
+            throw SGError.failedToOpenPort(name)
         }
         let fd = Darwin.open(name.cString(using: .ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
         guard fd != -1, fcntl(fd, F_SETFL, .zero) != -1 else {
-            throw SGError.couldNotOpenPort(name)
+            throw SGError.failedToOpenPort(name)
         }
 
         // ★★★ Start Communication ★★★ //
@@ -80,8 +92,8 @@ public final class SGPort: Hashable, Identifiable, Sendable {
     }
 
     public func close() throws {
+        let name = protectedName.withLock(\.self)
         guard protectedPortState.withLock({ [.open, .sleeping].contains($0) }) else {
-            let name = protectedName.withLock(\.self)
             throw SGError.portIsNotOpen(name)
         }
         protectedReadTimer.withLockUnchecked {
@@ -92,33 +104,44 @@ public final class SGPort: Hashable, Identifiable, Sendable {
         var options = termios()
         guard tcdrain(fileDescriptor) != -1,
               tcsetattr(fileDescriptor, TCSADRAIN, &options) != -1 else {
-            let name = protectedName.withLock(\.self)
-            throw SGError.couldNotClosePort(name)
+            throw SGError.failedToClosePort(name)
         }
         Darwin.close(fileDescriptor)
         protectedFileDescriptor.withLock { $0 = -1 }
-        protectedPortState.withLock { $0 = .close }
-        portStateSubject.send(.close)
+        protectedPortState.withLock { $0 = .closed }
+        portStateSubject.send(.closed)
     }
 
-    public func send(_ text: String) throws {
+    public func send(data: Data) throws {
+        let name = protectedName.withLock(\.self)
         guard protectedPortState.withLock({ $0 == .open }) else {
-            let name = protectedName.withLock(\.self)
             throw SGError.portIsNotOpen(name)
         }
         let fileDescriptor = protectedFileDescriptor.withLock(\.self)
-        var bytes = text.unicodeScalars.map(\.value)
-        Darwin.write(fileDescriptor, &bytes, bytes.count)
+        try data.withUnsafeBytes { bufferPointer in
+            guard let pointer = bufferPointer.baseAddress,
+                  Darwin.write(fileDescriptor, pointer, data.count) != -1 else {
+                throw SGError.failedToWriteData(name)
+            }
+        }
+    }
+
+    public func send(text: String, encoding: String.Encoding = .ascii) throws {
+        guard let data = text.data(using: encoding) else {
+            let name = protectedName.withLock(\.self)
+            throw SGError.failedToEncodeData(name)
+        }
+        try send(data: data)
     }
 
     // MARK: Set Options
     private func setOptions() throws {
+        let name = protectedName.withLock(\.self)
         let fileDescriptor = protectedFileDescriptor.withLock(\.self)
         guard fileDescriptor > 0 else { return }
         var options = termios()
         guard tcgetattr(fileDescriptor, &options) != -1 else {
-            let name = protectedName.withLock(\.self)
-            throw SGError.couldNotSetOptions(name)
+            throw SGError.failedToSetOptions(name)
         }
         cfmakeraw(&options)
         options.updateC_CC(VMIN, v: 1)
@@ -164,8 +187,7 @@ public final class SGPort: Hashable, Identifiable, Sendable {
         let baudRate = protectedBaudRate.withLock(\.self)
         guard cfsetspeed(&options, speed_t(baudRate)) != -1,
               tcsetattr(fileDescriptor, TCSANOW, &options) != -1 else {
-            let name = protectedName.withLock(\.self)
-            throw SGError.couldNotSetOptions(name)
+            throw SGError.failedToSetOptions(name)
         }
     }
 
@@ -231,20 +253,21 @@ public final class SGPort: Hashable, Identifiable, Sendable {
     }
 
     // MARK: Private Function
-    private func read() {
+    private func read(bufferSize: Int = 1024, encoding: String.Encoding = .ascii) {
+        let name = protectedName.withLock(\.self)
         guard protectedPortState.withLock({ $0 == .open }) else {
-            let name = protectedName.withLock(\.self)
+            dataSubject.send(.failure(.portIsNotOpen(name)))
             textSubject.send(.failure(.portIsNotOpen(name)))
             return
         }
-        var buffer = [UInt8](repeating: .zero, count: 1024)
+        var buffer = [UInt8](repeating: .zero, count: bufferSize)
         let fileDescriptor = protectedFileDescriptor.withLock(\.self)
         let readLength = Darwin.read(fileDescriptor, &buffer, buffer.count)
         guard readLength > 0 else { return }
         let data = Data(bytes: buffer, count: readLength)
-        guard let text = String(data: data, encoding: .ascii) else {
-            let name = protectedName.withLock(\.self)
-            textSubject.send(.failure(.couldNotDecodeText(name)))
+        dataSubject.send(.success(data))
+        guard let text = String(data: data, encoding: encoding) else {
+            textSubject.send(.failure(.failedToEncodeText(name)))
             return
         }
         textSubject.send(.success(text))

@@ -54,8 +54,9 @@ try? port.close()
 - Send a message
 
 ```swift
-let text: String = "Hello World"
-try? port.send(text)
+try? port.send(text: "Hello World")
+// or
+try? port.send(data: Data())
 ```
 
 - Read messages
@@ -66,6 +67,17 @@ Task {
         switch result {
         case let .success(text):
             Swift.print(text)
+        case let .failure(error):
+            Swift.print(error.localizedDescription)
+        }
+    }
+}
+// or
+Task {
+    for await result in port.dataStream {
+        switch result {
+        case let .success(data):
+            // use data
         case let .failure(error):
             Swift.print(error.localizedDescription)
         }

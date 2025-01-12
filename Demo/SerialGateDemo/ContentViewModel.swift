@@ -104,7 +104,7 @@ final class ContentViewModel: ObservableObject {
     func sendPort() {
         guard let port, portIsOpening else { return }
         do {
-            try port.send(inputText)
+            try port.send(text: inputText)
         } catch {
             logput(error.localizedDescription)
         }
