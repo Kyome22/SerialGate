@@ -8,7 +8,7 @@ import os
 public final class SGPortManager: Sendable {
     public static let shared = SGPortManager()
 
-    private let detector = SGUSBDetector()
+    private let detector = SGSerialDeviceDetector()
     private let protectedTask = OSAllocatedUnfairLock<Task<Void, Never>?>(initialState: nil)
 
     private let availablePortsSubject = CurrentValueSubject<[SGPort], Never>([])
@@ -34,13 +34,8 @@ public final class SGPortManager: Sendable {
             await withTaskGroup(of: Void.self) { group in
                 // MARK: USB Detector
                 group.addTask { [weak self, detector] in
-                    for await _ in detector.addedDeviceStream {
-                        self?.addedPorts()
-                    }
-                }
-                group.addTask { [weak self, detector] in
-                    for await _ in detector.removedDeviceStream {
-                        self?.removedPorts()
+                    for await _ in detector.devicesStream {
+                        self?.updatePorts()
                     }
                 }
                 // MARK: Sleep/WakeUp
@@ -76,27 +71,20 @@ public final class SGPortManager: Sendable {
         availablePortsSubject.value.append(contentsOf: portList.map(SGPort.init))
     }
 
-    private func addedPorts() {
+    private func updatePorts() {
         let device = findDevice()
         let portList = getPortList(device)
-        let currentPorts = availablePortsSubject.value
-        let newPorts: [SGPort] = portList.compactMap { portName in
-            if currentPorts.contains(where: { $0.name ==  portName }) {
-                nil
-            } else {
-                SGPort(portName)
-            }
-        }
-        guard !newPorts.isEmpty else { return }
-        availablePortsSubject.value.insert(contentsOf: newPorts, at: 0)
-    }
-
-    private func removedPorts() {
-        let device = findDevice()
-        let portList = getPortList(device)
-        let removedPorts = availablePortsSubject.value.filter { !portList.contains($0.name) }
+        var ports = availablePortsSubject.value
+        let removedPorts = ports.filter { !portList.contains($0.name) } // [0]
         removedPorts.forEach { $0.removed() }
-        availablePortsSubject.value.removeAll { removedPorts.contains($0) }
+        ports.removeAll { removedPorts.contains($0) }
+        let addedPorts = portList.compactMap { portName in
+            ports.contains(where: { $0.name == portName }) ? nil : SGPort(portName)
+        }
+        if !addedPorts.isEmpty {
+            ports.insert(contentsOf: addedPorts, at: .zero)
+        }
+        availablePortsSubject.send(ports)
     }
 
     private func sleepPorts() {
@@ -133,8 +121,9 @@ public final class SGPortManager: Sendable {
         var ports = [String]()
         while case let object = IOIteratorNext(iterator), object != IO_OBJECT_NULL {
             let cfKey: CFString = kIOCalloutDeviceKey as NSString
-            let cfStr = IORegistryEntryCreateCFProperty(object, cfKey, kCFAllocatorDefault, .zero)!.takeUnretainedValue()
-            ports.append(cfStr as! String)
+            if let cfStr = IORegistryEntryCreateCFProperty(object, cfKey, kCFAllocatorDefault, .zero) {
+                ports.append(cfStr.takeUnretainedValue() as! String)
+            }
             IOObjectRelease(object)
         }
         IOObjectRelease(iterator)

@@ -1,34 +1,21 @@
 import IOKit.usb
-import Logput
 import os
 
-final class SGUSBDetector: Sendable {
+final class SGSerialDeviceDetector: Sendable {
     private let protectedRunLoop = OSAllocatedUnfairLock<CFRunLoop?>(uncheckedState: nil)
     private let protectedNotificationPort = OSAllocatedUnfairLock<IONotificationPortRef?>(uncheckedState: nil)
     private let protectedRunLoopSource = OSAllocatedUnfairLock<CFRunLoopSource?>(uncheckedState: nil)
     private let protectedAddedIterator = OSAllocatedUnfairLock<io_iterator_t>(initialState: .zero)
-    private let protectedAddedHandler = OSAllocatedUnfairLock<(@Sendable () -> Void)?>(initialState: nil)
     private let protectedRemovedIterator = OSAllocatedUnfairLock<io_iterator_t>(initialState: .zero)
-    private let protectedRemovedHandler = OSAllocatedUnfairLock<(@Sendable () -> Void)?>(initialState: nil)
+    private let protectedDevicesHandler = OSAllocatedUnfairLock<(@Sendable () -> Void)?>(initialState: nil)
 
-    var addedDeviceStream: AsyncStream<Void> {
+    var devicesStream: AsyncStream<Void> {
         AsyncStream { continuation in
-            protectedAddedHandler.withLock {
+            protectedDevicesHandler.withLock {
                 $0 = { continuation.yield() }
             }
             continuation.onTermination = { [weak self] _ in
-                self?.protectedAddedHandler.withLock { $0 = nil }
-            }
-        }
-    }
-
-    var removedDeviceStream: AsyncStream<Void> {
-        AsyncStream { continuation in
-            protectedRemovedHandler.withLock {
-                $0 = { continuation.yield() }
-            }
-            continuation.onTermination = { [weak self] _ in
-                self?.protectedRemovedHandler.withLock { $0 = nil }
+                self?.protectedDevicesHandler.withLock { $0 = nil }
             }
         }
     }
@@ -42,20 +29,20 @@ final class SGUSBDetector: Sendable {
         protectedRunLoopSource.withLockUnchecked { $0 = runLoopSource }
         CFRunLoopAddSource(runLoop, runLoopSource, .defaultMode)
 
-        let matchingDict = IOServiceMatching(kIOUSBDeviceClassName)
+        let matchingDict = IOServiceMatching(kIOSerialBSDServiceValue)
         let opaqueSelf = Unmanaged.passUnretained(self).toOpaque()
 
         // MARK: Added Notification
         let addedCallback: IOServiceMatchingCallback = { (pointer, iterator) in
-            let detector = Unmanaged<SGUSBDetector>.fromOpaque(pointer!).takeUnretainedValue()
-            detector.protectedAddedHandler.withLock { $0?() }
+            let detector = Unmanaged<SGSerialDeviceDetector>.fromOpaque(pointer!).takeUnretainedValue()
+            detector.protectedDevicesHandler.withLock { $0?() }
             while case let device = IOIteratorNext(iterator), device != IO_OBJECT_NULL {
                 IOObjectRelease(device)
             }
         }
         var addedIterator = protectedAddedIterator.withLock(\.self)
         IOServiceAddMatchingNotification(notificationPort,
-                                         kIOPublishNotification,
+                                         kIOMatchedNotification,
                                          matchingDict,
                                          addedCallback,
                                          opaqueSelf,
@@ -66,8 +53,8 @@ final class SGUSBDetector: Sendable {
 
         // MARK: Removed Notification
         let removedCallback: IOServiceMatchingCallback = { (pointer, iterator) in
-            let detector = Unmanaged<SGUSBDetector>.fromOpaque(pointer!).takeUnretainedValue()
-            detector.protectedRemovedHandler.withLock { $0?() }
+            let detector = Unmanaged<SGSerialDeviceDetector>.fromOpaque(pointer!).takeUnretainedValue()
+            detector.protectedDevicesHandler.withLock { $0?() }
             while case let device = IOIteratorNext(iterator), device != IO_OBJECT_NULL {
                 IOObjectRelease(device)
             }
