@@ -13,12 +13,7 @@ struct SerialGateDemoApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                NavigationLink("Check", value: 0)
-                    .navigationDestination(for: Int.self) { _ in
-                        ContentView()
-                    }
-            }
+            ContentView()
         }
         .defaultSize(width: 400, height: 400)
     }
