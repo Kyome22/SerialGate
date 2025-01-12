@@ -6,7 +6,7 @@ public final class SGPort: Hashable, Identifiable, Sendable {
     private let protectedFileDescriptor = OSAllocatedUnfairLock<Int32>(initialState: .zero)
     private let protectedReadTimer = OSAllocatedUnfairLock<(any DispatchSourceTimer)?>(uncheckedState: nil)
     private let protectedName: OSAllocatedUnfairLock<String>
-    private let protectedPortState = OSAllocatedUnfairLock<SGPortState>(initialState: .close)
+    private let protectedPortState = OSAllocatedUnfairLock<SGPortState>(initialState: .closed)
     private let protectedBaudRate = OSAllocatedUnfairLock<Int32>(initialState: B9600)
     private let protectedParity = OSAllocatedUnfairLock<SGParity>(initialState: .none)
     private let protectedStopBits = OSAllocatedUnfairLock<UInt32>(initialState: 1)
@@ -53,7 +53,7 @@ public final class SGPort: Hashable, Identifiable, Sendable {
     // MARK: Public Function
     public func open() throws {
         let name = protectedName.withLock(\.self)
-        guard protectedPortState.withLock({ $0 == .close }) else {
+        guard protectedPortState.withLock({ $0 == .closed }) else {
             throw SGError.couldNotOpenPort(name)
         }
         let fd = Darwin.open(name.cString(using: .ascii)!, O_RDWR | O_NOCTTY | O_NONBLOCK)
@@ -97,8 +97,8 @@ public final class SGPort: Hashable, Identifiable, Sendable {
         }
         Darwin.close(fileDescriptor)
         protectedFileDescriptor.withLock { $0 = -1 }
-        protectedPortState.withLock { $0 = .close }
-        portStateSubject.send(.close)
+        protectedPortState.withLock { $0 = .closed }
+        portStateSubject.send(.closed)
     }
 
     public func send(_ text: String) throws {

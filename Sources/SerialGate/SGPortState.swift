@@ -1,6 +1,6 @@
 public enum SGPortState: Sendable {
     case open
-    case close
+    case closed
     case sleeping
     case removed
 }
